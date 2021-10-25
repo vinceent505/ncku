@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
-
-start_filename = "start_time.csv"
-end_filename = "end_time.csv"
-note_filename = "Bach_Sonata_No1.csv"
+csv_path = "csvs/"
+start_filename = csv_path + "start_time.csv"
+end_filename = csv_path + "end_time.csv"
+note_filename = csv_path + "Bach_Sonata_No1.csv"
 
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'

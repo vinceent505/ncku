@@ -6,6 +6,8 @@ from mido import Message, MidiFile, MidiTrack
 import channel_num
 
 
+csv_path = "csvs/"
+
 def mapping(sourceValue, sourceRangeMin, sourceRangeMax, targetRangeMin, targetRangeMax):
     return targetRangeMin + ((targetRangeMax - targetRangeMin) * (sourceValue - sourceRangeMin)) / (sourceRangeMax - sourceRangeMin)
 
@@ -22,14 +24,14 @@ if __name__ == "__main__":
         fs, envelope_data = wavfile.read(note_path)
         envelope.append(envelope_data)
 
-    csv_path = "start_end.csv"
+    csv_path = csv_path + "start_end.csv"
     csv = pd.read_csv(csv_path)
     csv = csv[0:-1]
 
 
 
-    start_file = pd.read_csv("new_start_time.csv")
-    end_file = pd.read_csv("end_time.csv")
+    start_file = pd.read_csv(csv_path + "tart_time.csv")
+    end_file = pd.read_csv(csv_path + "end_time.csv")
 
 
     midinote=[]

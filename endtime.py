@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import csv
 
+csv_path = "csvs/"
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
 			,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -26,9 +27,9 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
 window_size = 2048
 filename = "bach/bach_hil.wav"
-start_filename = "start_time.csv"
-note_filename = "Bach_Sonata_No1.csv"
-end_filename = "end_list.csv"
+start_filename = csv_path + "start_time.csv"
+note_filename = csv_path + "Bach_Sonata_No1.csv"
+end_filename = csv_path + "end_list.csv"
 
 def find_endtime(start_list):
 	data, fs = librosa.load(filename)
@@ -101,7 +102,7 @@ def find_endtime(start_list):
 		final_csv.append([i])
 
 
-	with open("end_time.csv", "w") as f:
+	with open(csv_path + "end_time.csv", "w") as f:
 		writer = csv.writer(f)
 		writer.writerow(["end"])
 		writer.writerows(final_csv)

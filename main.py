@@ -10,7 +10,7 @@ import pitch
 import time
 import harmonics
 import dtw
-
+csv_path = "csvs/"
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
         ,'C2', 'D-2', 'D2', 'E-2', 'E2', 'F2', 'G-2', 'G2', 'A-2', 'A2', 'B-2', 'B2'
@@ -31,19 +31,19 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  
 if __name__ == "__main__":
     dtw.dtw()
-    file = pd.read_csv("Bach_Sonata_No1.csv")
+    file = pd.read_csv(csv_path + "Bach_Sonata_No1.csv")
     note = []
     for i in file['note']:
         note.append(i)
 
     x_1, fs = librosa.load('Bach/bach_hil.wav', sr=44100)
-    file = pd.read_csv("start_end.csv")
-    start_file = pd.read_csv("start_time.csv")
+    file = pd.read_csv(csv_path + "start_end.csv")
+    start_file = pd.read_csv(csv_path + "start_time.csv")
     start_time = []
     for i in start_file['start']:
         start_time.append(i)
     endtime.find_endtime(start_time)
-    end_file = pd.read_csv("end_time.csv")
+    end_file = pd.read_csv(csv_path + "end_time.csv")
     end_time = []
     for i in end_file['end']:
         end_time.append(i)

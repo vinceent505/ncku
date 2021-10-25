@@ -12,6 +12,7 @@ import librosa.display
 import pandas as pd
 import csv
 
+csv_path = "csvs/"
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
         ,'C2', 'D-2', 'D2', 'E-2', 'E2', 'F2', 'G-2', 'G2', 'A-2', 'A2', 'B-2', 'B2'
@@ -134,7 +135,7 @@ def dtw():
         final_csv.append([i])
 
     name = ["start"]
-    with open("start_time.csv", "w") as f:
+    with open(csv_path + "start_time.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)
         writer.writerows(final_csv)
