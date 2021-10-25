@@ -139,7 +139,3 @@ def dtw():
         writer = csv.writer(f)
         writer.writerow(name)
         writer.writerows(final_csv)
-
-
-if __name__ == "__main__":
-    dtw()

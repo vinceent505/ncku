@@ -106,14 +106,4 @@ def find_endtime(start_list):
 		writer = csv.writer(f)
 		writer.writerow(["end"])
 		writer.writerows(final_csv)
-		
-
-
-
-if __name__ == "__main__":
-
-	find_endtime()
 			
-
-	# # plt.plot(librosa.amplitude_to_db(np.array(ll)))
-	# # plt.show()

@@ -37,28 +37,6 @@ def pitch_dec(frag, num, fs, freq):
 
     return pitch_values
 
-if __name__ == "__main__":
-    x_1, fs = librosa.load('Bach/bach_hil.wav')
-    file = pd.read_csv("start_end.csv")
-
-    start_file = pd.read_csv("start_time.csv")
-    start_time = []
-    for i in start_file['start']:
-        start_time.append(i)
-    endtime.find_endtime()
-    end_file = pd.read_csv("end_time.csv")
-    end_time = []
-    for i in end_file['end']:
-        end_time.append(i)
-    p = []
-    for count in range(20):
-        frag = x_1[int(start_time[count]*fs):int(end_time[count]*fs)]
-        frag = filter.filt(frag, count, fs)
-        a = pitch_dec(frag, fs)
-        for i in a:
-            p.append(i)
-    plt.plot(p)
-    plt.show()
 
 
 
