@@ -52,9 +52,9 @@ def dtw():
     hop_size = 64
 
     x_1_chroma = librosa.feature.chroma_cqt(y=x_1, sr=fs, tuning=0, norm=2,
-                                            hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
+                                            hop_length=hop_size, n_chroma = 12, bins_per_octave = 72)
     x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
-                                            hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
+                                            hop_length=hop_size, n_chroma = 12, bins_per_octave = 72)
 
     D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
     start_idx = []
