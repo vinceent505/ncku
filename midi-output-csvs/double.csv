@@ -1,4 +1,4 @@
-,note,start_time,duration,velocity,tempo
+,note,start_absolute_time,duration,velocity,tempo
 0,F#5,3.75,0.25,100,250
 1,B4,4,0.25,100,250
 2,D5,4.25,0.25,100,250

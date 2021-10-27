@@ -59,7 +59,7 @@ def main():
 		s = music21.midi.translate.midiFileToStream(mf, quantizePost=False).flat #quantize is what rounds all note durations to real music note types, not needed for our application
 		# Convert chords in to notes. 
 		# TODO: consider chords as separate objects from notes? Everything's in music21 anyways
-		df = pd.DataFrame(columns=["note_name", "start_time", "duration", "velocity", "tempo"])
+		df = pd.DataFrame(columns=["note", "start_absolute_time", "duration", "velocity", "tempo"])
 		for g in s.recurse().notes:
 			#print(g)
 			if g.isChord:
