@@ -49,90 +49,97 @@ def dtw():
 
     x_2, fs = librosa.load('Bach/double_hil.wav', sr=44100)
 
-    n_fft = 4410
+    end = False
     hop_size = 64
-
-    x_1_chroma = librosa.feature.chroma_cqt(y=x_1, sr=fs, tuning=0, norm=2,
-                                            hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
-    x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
-                                            hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
-
-    D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
-    start_idx = []
-    for i in start_time:
-        start_idx.append(int(i/hop_size*fs)*3)
-
-    wp_s = np.asarray(wp) * hop_size / fs
-
-    fig = plt.figure(figsize=(16, 8))
-
-    # Plot x_1
-    plt.subplot(2, 1, 1)
-    librosa.display.waveplot(x_1, sr=fs)
-    plt.title('Synthesis Version $X_1$')
-    ax1 = plt.gca()
-
-    # Plot x_2
-    plt.subplot(2, 1, 2)
-    librosa.display.waveplot(x_2, sr=fs)
-    plt.title('Hil Version $X_2$')
-    ax2 = plt.gca()
-
-    plt.tight_layout()
-
-    trans_figure = fig.transFigure.inverted()
-    lines = []
-    arrows = 30
-    points_idx = np.int16(np.round(np.linspace(0, wp.shape[0] - 1, arrows)))
-    start_idx_np = np.array(start_idx)
-
-    count = 0
-    first = False
-    dtw_start_time = []
-    # for tp1, tp2 in zip((wp[points_idx, 0]) * hop_size, (wp[points_idx, 1]) * hop_size):
-    for i in wp * hop_size / fs:
-        tp1 = 0
-        tp2 = 0
-        for j in start_idx_np:
-            if round(i[0], 2) == round(j* hop_size / fs / 3, 2) and i[1] > 0:
-                if(first):
-                    break
-                if(i[0] == 0):
-                    first = True
-                tp1 = i[0]
-                tp2 = i[1]
-                dtw_start_time.append(tp2)
-                count += 1
-                break
-        
-        # get position on axis for a given index-pair
-        coord1 = trans_figure.transform(ax1.transData.transform([tp1, 0]))
-        coord2 = trans_figure.transform(ax2.transData.transform([tp2, 0]))
-        # draw a line
-        line = matplotlib.lines.Line2D((coord1[0], coord2[0]),
-                                    (coord1[1], coord2[1]),
-                                    transform=fig.transFigure,
-                                    color='r')
-        lines.append(line)
-    fig.lines = lines
-    plt.tight_layout()
-    dtw_start_time.reverse()
-    plt.show()
-    tmp = []
-    final_time = []
-    for i in range(len(dtw_start_time)):
-        if(i==len(dtw_start_time)-1):
-            final_time.append(sum(tmp)/len(tmp))
-            break
-        else:
-            tmp.append(dtw_start_time[i])
-            if((dtw_start_time[i+1]-dtw_start_time[i])>0.01):
-                final_time.append(sum(tmp)/len(tmp))
-                tmp = []
-
     final_csv = []
-    for i in final_time:
-        final_csv.append([i])
+    while(True):
+
+        
+
+
+        x_1_chroma = librosa.feature.chroma_cqt(y=x_1, sr=fs, tuning=0, norm=2,
+                                                hop_length=hop_size, n_chroma = 12, bins_per_octave = 72)
+        x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
+                                                hop_length=hop_size, n_chroma = 12, bins_per_octave = 72)
+
+        D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
+        start_idx = []
+        for i in start_time:
+            start_idx.append(int(i/hop_size*fs)*3)
+
+        wp_s = np.asarray(wp) * hop_size / fs
+
+        fig = plt.figure(figsize=(16, 8))
+
+        # Plot x_1
+        plt.subplot(2, 1, 1)
+        librosa.display.waveplot(x_1, sr=fs)
+        plt.title('Synthesis Version $X_1$')
+        ax1 = plt.gca()
+
+        # Plot x_2
+        plt.subplot(2, 1, 2)
+        librosa.display.waveplot(x_2, sr=fs)
+        plt.title('Hil Version $X_2$')
+        ax2 = plt.gca()
+
+        plt.tight_layout()
+
+        trans_figure = fig.transFigure.inverted()
+        lines = []
+        arrows = 30
+        points_idx = np.int16(np.round(np.linspace(0, wp.shape[0] - 1, arrows)))
+        start_idx_np = np.array(start_idx)
+
+        count = 0
+        first = False
+        dtw_start_time = []
+        # for tp1, tp2 in zip((wp[points_idx, 0]) * hop_size, (wp[points_idx, 1]) * hop_size):
+        for i in wp * hop_size / fs:
+            tp1 = 0
+            tp2 = 0
+            for j in start_idx_np:
+                if round(i[0], 2) == round(j* hop_size / fs / 3, 2) and i[1] > 0:
+                    if(first):
+                        break
+                    if(i[0] == 0):
+                        first = True
+                    tp1 = i[0]
+                    tp2 = i[1]
+                    dtw_start_time.append(tp2)
+                    count += 1
+                    break
+            
+            # get position on axis for a given index-pair
+            coord1 = trans_figure.transform(ax1.transData.transform([tp1, 0]))
+            coord2 = trans_figure.transform(ax2.transData.transform([tp2, 0]))
+            # draw a line
+            line = matplotlib.lines.Line2D((coord1[0], coord2[0]),
+                                        (coord1[1], coord2[1]),
+                                        transform=fig.transFigure,
+                                        color='r')
+            lines.append(line)
+        fig.lines = lines
+        plt.tight_layout()
+        dtw_start_time.reverse()
+        plt.show()
+        tmp = []
+        final_time = []
+        for i in range(len(dtw_start_time)):
+            if(i==len(dtw_start_time)-1):
+                final_time.append(sum(tmp)/len(tmp))
+                break
+            else:
+                tmp.append(dtw_start_time[i])
+                if((dtw_start_time[i+1]-dtw_start_time[i])>0.01):
+                    final_time.append(sum(tmp)/len(tmp))
+                    tmp = []
+
+        for i in final_time:
+            final_csv.append([i])
+
+        if(end):
+            break
 
     name = ["start"]
     with open(csv_path + "start_time.csv", "w") as f:
