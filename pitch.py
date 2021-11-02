@@ -19,7 +19,7 @@ import scipy.io.wavfile
 def pitch_dec(frag, num, fs, freq):
 
     up = resample.upsample(frag, fs, 2)
-    scipy.io.wavfile.write("out/filted_%s.wav" %str(num) , fs, frag)
+    # scipy.io.wavfile.write("out/filted_%s.wav" %str(num) , fs, frag)
     snd = parselmouth.Sound(up, sampling_frequency = fs)
 
 

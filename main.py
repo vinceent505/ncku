@@ -30,7 +30,7 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
                  
 if __name__ == "__main__":
-    dtw.dtw()
+    # dtw.dtw()
     file = pd.read_csv("Bach_Sonata_No1.csv")
     note = []
     for i in file['note']:
@@ -79,8 +79,9 @@ if __name__ == "__main__":
         envelope.env_write(count, envelope.normalize(envelope.envelope(frag_filt_1, count, fs, 10, 7), 0, 1))
         pitch_contour.append(pitch_onetone)
         t.append(time.time() - time_start)
-    for i in pitch_contour:
-        plt.plot(i)
+    for j, i in enumerate(pitch_contour):
+        p = np.linspace(start_time[j], end_time[j], len(i))
+        plt.plot(p, i)
 
     plt.show()
 

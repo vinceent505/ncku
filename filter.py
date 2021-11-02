@@ -48,7 +48,7 @@ def fft_filter(frag, base_freq, num, fs):
     # plt.show()
     # print(base_freq)
     f = np.fft.irfft(f)
-    scipy.io.wavfile.write("out/filted_%s_1.wav" %str(num) , fs, f)
+    # scipy.io.wavfile.write("out/filted_%s_1.wav" %str(num) , fs, f)
 
     return f
 
@@ -89,7 +89,7 @@ def filt(frag, num, fs, base_freq, note):
         tmp = butter_bandpass_filter(down, base_freq*(i+2)/1.06*n, base_freq*(i+2)*1.06*n, fs, order=2)
         y = y + tmp
     up = resample.upsample(y, fs, n)
-    #scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
+    scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
     return up
 
 def filtt(frag, num, fs, base_freq, note):
@@ -106,7 +106,7 @@ def filtt(frag, num, fs, base_freq, note):
 
 def harmonics_filter(freq, up, fs, num):
     n = 2
-    scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
+    # scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
     for i in range(1, 10):
         if i*freq>15500:
             break
