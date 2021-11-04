@@ -35,7 +35,7 @@ def dtw():
     prev = prev[len(prev)-1]
 
     file = pd.read_csv("midi-output-csvs/double_2.csv")
-    note = []
+    
     start_time = []
     count = 0
     # for i in file['note']:
