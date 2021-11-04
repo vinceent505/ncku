@@ -31,6 +31,10 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
 def dtw():
     file = pd.read_csv("midi-output-csvs/double_1.csv")
+    prev = file['start_absolute_time']
+    prev = prev[len(prev)-1]
+
+    file = pd.read_csv("midi-output-csvs/double_2.csv")
     note = []
     start_time = []
     count = 0
@@ -40,13 +44,13 @@ def dtw():
     print(file)
 
     for i in file['start_absolute_time']:
-        start_time.append(i)
+        start_time.append(i-prev)
     print("length:", len(start_time))
     start_time = np.unique(start_time).tolist()
 
-    x_1, fs = librosa.load('Bach/double_syn_1.wav', sr=44100)
+    x_1, fs = librosa.load('Bach/double_syn_2.wav', sr=44100)
 
-    x_2, fs = librosa.load('Bach/double_hil_1.wav', sr=44100)
+    x_2, fs = librosa.load('Bach/double_hil_2.wav', sr=44100)
 
     n_fft = 4410
     hop_size = 64
@@ -134,7 +138,7 @@ def dtw():
         final_csv.append([i])
 
     name = ["start"]
-    with open("dtw_output_csvs/start_time_1.csv", "w") as f:
+    with open("dtw_output_csvs/start_time_2.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)
         writer.writerows(final_csv)
