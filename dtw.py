@@ -34,13 +34,13 @@ def dtw():
     note = []
     start_time = []
     count = 0
-    for i in file['note']:
-        note.append(i)
-        count += 1
-
+    # for i in file['note']:
+    #     note.append(i)
+    #     count += 1
+    print(file)
 
     for i in file['start_absolute_time']:
-        start_time.append(i*0.8)
+        start_time.append(i)
     print("length:", len(start_time))
     start_time = np.unique(start_time).tolist()
 
@@ -134,7 +134,7 @@ def dtw():
         final_csv.append([i])
 
     name = ["start"]
-    with open("dtw_output_csvs/start_time_１.csv", "w") as f:
+    with open("dtw_output_csvs/start_time_1.csv", "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)
         writer.writerows(final_csv)

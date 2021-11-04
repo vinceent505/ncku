@@ -89,7 +89,7 @@ def filt(frag, num, fs, base_freq, note):
         tmp = butter_bandpass_filter(down, base_freq*(i+2)/1.06*n, base_freq*(i+2)*1.06*n, fs, order=2)
         y = y + tmp
     up = resample.upsample(y, fs, n)
-    scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
+    # scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
     return up
 
 def filtt(frag, num, fs, base_freq, note):

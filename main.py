@@ -8,8 +8,11 @@ import filter
 import endtime
 import pitch
 import time
+import csv
 import harmonics
 import dtw
+
+output_filename = "final_output_csvs/Bach_sonata_no1.csv"
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -31,25 +34,29 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  
 if __name__ == "__main__":
     # dtw.dtw()
-    file = pd.read_csv("Bach_Sonata_No1.csv")
+
+    
     note = []
+    start_time = []
+    end_time = []
+    pitch_contour = []
+
+
+    file = pd.read_csv("Bach_Sonata_No1.csv")
     for i in file['note']:
         note.append(i)
 
     x_1, fs = librosa.load('Bach/bach_hil.wav', sr=44100)
     file = pd.read_csv("start_end.csv")
     start_file = pd.read_csv("start_time.csv")
-    start_time = []
     for i in start_file['start']:
         start_time.append(i)
     endtime.find_endtime(start_time)
     end_file = pd.read_csv("end_time.csv")
-    end_time = []
     for i in end_file['end']:
         end_time.append(i)
 
     n_start_time = []
-    pitch_contour = []
     t = []
     time_1 = time.time()
     for count in range(10):
@@ -83,9 +90,29 @@ if __name__ == "__main__":
         p = np.linspace(start_time[j], end_time[j], len(i))
         plt.plot(p, i)
 
+
+    col_names = ["num", "note", "start", "end", "pitch"]
+
+    # d = {"note": note,
+    #      "start": start_time,
+    #      "end": end_time,
+    #      "pitch": pitch_contour
+
+    # }
+
+    w_file = open(output_filename, 'w')
+    fieldnames = col_names
+    writer = csv.DictWriter(w_file, fieldnames=fieldnames)
+    writer.writeheader()
+    for i in range(10):
+        d = {"num": i, "note": note[i], "start": start_time[i], "end": end_time[i], "pitch": pitch_contour[i]}
+        writer.writerow(d)
+    w_file.close()
+
+
     plt.show()
 
-    print("Total Time: ", time.time()-time_1)
-    plt.figure()
-    plt.plot(t)
-    plt.show()
+    # print("Total Time: ", time.time()-time_1)
+    # plt.figure()
+    # plt.plot(t)
+    # plt.show()
