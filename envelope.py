@@ -6,13 +6,17 @@ import librosa
 from sklearn import preprocessing
 from scipy.interpolate import interp1d
 import scipy.io.wavfile
+from tqdm import tqdm
+
 
 def normalize(arr, t_min, t_max):
+    arr_min = min(arr)
+    arr_max = max(arr)
     norm_arr = []
     diff = t_max - t_min
-    diff_arr = max(arr) - min(arr)    
-    for i in arr:
-        temp = (((i - min(arr))*diff)/diff_arr) + t_min
+    diff_arr = arr_max - arr_min
+    for i in tqdm(arr):
+        temp = (((i - arr_min)*diff)/diff_arr) + t_min
         norm_arr.append(temp)
     return norm_arr
 def hl_envelopes_idx(s,dmin=1,dmax=1):
@@ -68,13 +72,15 @@ def envelope(data, num, fs, min, max):
     post_inter_x = []
     post_inter_y = []
     for i in range(len(data)*2):
-        post_inter_y.append(float(f(i)))
+        if float(f(i))<0:
+            post_inter_y.append(0)
+        else:
+            post_inter_y.append(float(f(i)))
         post_inter_x.append(i/44100)
     # plt.subplot(1, 2, 2)
     # new_start = env_update(post_inter_y, start, end)
     # plt.plot(post_inter_x, post_inter_y)
     # plt.show()
-    
     return post_inter_y
     
     # return new_start

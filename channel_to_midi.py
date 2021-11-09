@@ -90,9 +90,8 @@ if __name__ == "__main__":
             temp = len(envelope[j]) / int(gap[j])
             expression = 0
             for i in range(0, len(envelope[j]), int(temp)):
-                expression = int(mapping(envelope[j][i], 0, 1, 0, 127))
                 if(j%num_input)==num_channel:
-                    track.append(Message('control_change', channel = 0, control = 11, value = expression, time = 1))
+                    track.append(Message('control_change', channel = 0, control = 11, time = 1))
                 else:
                     count += 1
             pre_note = midinote[j]
