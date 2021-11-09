@@ -61,9 +61,6 @@ if __name__ == "__main__":
     for i in end_file['end']:
         end_time.append(i)
 
-
-
-
     n_start_time = []
     t = []
     time_1 = time.time()
