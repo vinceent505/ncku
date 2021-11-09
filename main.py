@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
         k = filter.harmonics_filter(f0, frag, fs, count)
 
-        # harmonics_ = harmonics.harmonics_poly(frag, f0, fs)
+        # harmonics_ = harmonics.harmonics_poly(frag, f0, fs) #正式執行再解除註解
         # means, covariances, weight = harmonics.noise_poly(k, f0, fs)
 
 
