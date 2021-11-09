@@ -11,6 +11,7 @@ import librosa
 import librosa.display
 import pandas as pd
 import csv
+import channel_num
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -30,118 +31,132 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
 def dtw():
-    file = pd.read_csv("midi-output-csvs/double_1.csv")
-    prev = file['start_absolute_time']
-    prev = prev[len(prev)-1]
+    for num in range(1, 5):
+        print("midi-output-csvs/double_%d.csv" %(num-1))
+        try:
+            file = pd.read_csv("midi-output-csvs/double_%d.csv" %(num-1))
+            prev = file['start_absolute_time']
+            prev = prev[len(prev)-1]
+            print("prev: ", prev)
+        except:
+            prev = 0
 
-    file = pd.read_csv("midi-output-csvs/double_2.csv")
-    
-    start_time = []
-    count = 0
-    # for i in file['note']:
-    #     note.append(i)
-    #     count += 1
-    print(file)
+        file = pd.read_csv("midi-output-csvs/double_%d.csv" %num)
 
-    for i in file['start_absolute_time']:
-        start_time.append(i-prev)
-    print("length:", len(start_time))
-    start_time = np.unique(start_time).tolist()
+        start_time = []
+        count = 0
+        # for i in file['note']:
+        #     note.append(i)
+        #     count += 1
+        # print(file)
 
-    x_1, fs = librosa.load('Bach/double_syn_2.wav', sr=44100)
+        for i in file['start_absolute_time']:
+            start_time.append(i-prev)
+        print(start_time)
+        # print("length:", len(start_time))
+        start_time = np.unique(start_time).tolist()
 
-    x_2, fs = librosa.load('Bach/double_hil_2.wav', sr=44100)
+        x_1, fs = librosa.load('Bach/double_syn_%d.wav' %num, sr=44100)
 
-    n_fft = 4410
-    hop_size = 64
+        x_2, fs = librosa.load('Bach/double_hil_%d.wav' %num, sr=44100)
 
-    x_1_chroma = librosa.feature.chroma_cqt(y=x_1, sr=fs, tuning=0, norm=2,
-                                            hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
-    x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
-                                            hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
+        n_fft = 4410
+        hop_size = 64
 
-    D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
-    start_idx = []
-    for i in start_time:
-        start_idx.append(int(i/hop_size*fs)*3)
+        x_1_chroma = librosa.feature.chroma_cqt(y=x_1, sr=fs, tuning=0, norm=2,
+                                                hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
+        x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
+                                                hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
 
-    wp_s = np.asarray(wp) * hop_size / fs
+        D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
+        start_idx = []
+        for i in start_time:
+            start_idx.append(int(i/hop_size*fs)*3)
 
-    fig = plt.figure(figsize=(16, 8))
+        wp_s = np.asarray(wp) * hop_size / fs
 
-    # Plot x_1
-    plt.subplot(2, 1, 1)
-    librosa.display.waveplot(x_1, sr=fs)
-    plt.title('Synthesis Version $X_1$')
-    ax1 = plt.gca()
+        fig = plt.figure(figsize=(16, 8))
 
-    # Plot x_2
-    plt.subplot(2, 1, 2)
-    librosa.display.waveplot(x_2, sr=fs)
-    plt.title('Hil Version $X_2$')
-    ax2 = plt.gca()
+        # Plot x_1
+        plt.subplot(2, 1, 1)
+        librosa.display.waveplot(x_1, sr=fs)
+        plt.title('Synthesis Version $X_1$')
+        ax1 = plt.gca()
 
-    plt.tight_layout()
+        # Plot x_2
+        plt.subplot(2, 1, 2)
+        librosa.display.waveplot(x_2, sr=fs)
+        plt.title('Hil Version $X_2$')
+        ax2 = plt.gca()
 
-    trans_figure = fig.transFigure.inverted()
-    lines = []
-    arrows = 30
-    points_idx = np.int16(np.round(np.linspace(0, wp.shape[0] - 1, arrows)))
-    start_idx_np = np.array(start_idx)
+        plt.tight_layout()
 
-    count = 0
-    first = False
-    dtw_start_time = []
-    # for tp1, tp2 in zip((wp[points_idx, 0]) * hop_size, (wp[points_idx, 1]) * hop_size):
-    for i in wp * hop_size / fs:
-        tp1 = 0
-        tp2 = 0
-        for j in start_idx_np:
-            if round(i[0], 2) == round(j* hop_size / fs / 3, 2) and i[1] > 0:
-                if(first):
+        trans_figure = fig.transFigure.inverted()
+        lines = []
+        arrows = 30
+        points_idx = np.int16(np.round(np.linspace(0, wp.shape[0] - 1, arrows)))
+        start_idx_np = np.array(start_idx)
+
+        count = 0
+        first = False
+        dtw_start_time = []
+        # for tp1, tp2 in zip((wp[points_idx, 0]) * hop_size, (wp[points_idx, 1]) * hop_size):
+        for i in wp * hop_size / fs:
+            tp1 = 0
+            tp2 = 0
+            for j in start_idx_np:
+                if round(i[0], 2) == round(j* hop_size / fs / 3, 2) and i[1] > 0:
+                    if(first):
+                        break
+                    if(i[0] == 0):
+                        first = True
+                    tp1 = i[0]
+                    tp2 = i[1]
+                    dtw_start_time.append(tp2)
+                    count += 1
                     break
-                if(i[0] == 0):
-                    first = True
-                tp1 = i[0]
-                tp2 = i[1]
-                dtw_start_time.append(tp2)
-                count += 1
-                break
-        
-        # get position on axis for a given index-pair
-        coord1 = trans_figure.transform(ax1.transData.transform([tp1, 0]))
-        coord2 = trans_figure.transform(ax2.transData.transform([tp2, 0]))
-        # draw a line
-        line = matplotlib.lines.Line2D((coord1[0], coord2[0]),
-                                    (coord1[1], coord2[1]),
-                                    transform=fig.transFigure,
-                                    color='r')
-        lines.append(line)
-    fig.lines = lines
-    plt.tight_layout()
-    dtw_start_time.reverse()
-    plt.show()
-    tmp = []
-    final_time = []
-    for i in range(len(dtw_start_time)):
-        if(i==len(dtw_start_time)-1):
-            final_time.append(sum(tmp)/len(tmp))
-            break
-        else:
-            tmp.append(dtw_start_time[i])
-            if((dtw_start_time[i+1]-dtw_start_time[i])>0.01):
+            
+            # get position on axis for a given index-pair
+            coord1 = trans_figure.transform(ax1.transData.transform([tp1, 0]))
+            coord2 = trans_figure.transform(ax2.transData.transform([tp2, 0]))
+            # draw a line
+            line = matplotlib.lines.Line2D((coord1[0], coord2[0]),
+                                        (coord1[1], coord2[1]),
+                                        transform=fig.transFigure,
+                                        color='r')
+            lines.append(line)
+        fig.lines = lines
+        plt.tight_layout()
+        dtw_start_time.reverse()
+        plt.show()
+        tmp = []
+        final_time = []
+        for i in range(len(dtw_start_time)):
+            if(i==len(dtw_start_time)-1):
                 final_time.append(sum(tmp)/len(tmp))
-                tmp = []
+                break
+            else:
+                tmp.append(dtw_start_time[i])
+                if((dtw_start_time[i+1]-dtw_start_time[i])>0.01):
+                    final_time.append(sum(tmp)/len(tmp))
+                    tmp = []
 
-    final_csv = []
-    for i in final_time:
-        final_csv.append([i])
+        final_csv = []
 
-    name = ["start"]
-    with open("dtw_output_csvs/start_time_2.csv", "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(name)
-        writer.writerows(final_csv)
+        try:
+            x_p, fs = librosa.load('Bach/double_hil_%d.wav' %(num-1), sr=44100)
+            prev = len(x_p/fs)
+        except:
+            prev = 0
+
+        for i in final_time:
+            final_csv.append([i+prev])
+
+        name = ["start"]
+        with open("dtw_output_csvs/start_time_%d.csv" %num, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(name)
+            writer.writerows(final_csv)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ import time
 import csv
 import harmonics
 import dtw
+import tqdm
 
 output_filename = "final_output_csvs/Bach_sonata_no1.csv"
 
@@ -47,6 +48,10 @@ if __name__ == "__main__":
         note.append(i)
 
     x_1, fs = librosa.load('Bach/bach_hil.wav', sr=44100)
+    print("Normalize Start!!")
+    x_1 = envelope.normalize(x_1, -1, 1)
+    print("Normalize Done!!")
+
     file = pd.read_csv("start_end.csv")
     start_file = pd.read_csv("start_time.csv")
     for i in start_file['start']:
@@ -59,7 +64,8 @@ if __name__ == "__main__":
     n_start_time = []
     t = []
     time_1 = time.time()
-    for count in range(10):
+    for count in tqdm.trange(10):
+        print(count)
         time_start = time.time()
         if(note[count][1] == '#'):
             f0 = frequency_list[pitch_list.index(note[count][0]+note[count][2])+1]
@@ -74,16 +80,15 @@ if __name__ == "__main__":
         # means, covariances, weight = harmonics.noise_poly(k, f0, fs)
 
 
-        frag_norm = envelope.normalize(frag, -1, 1)
-        a = filter.fft_filter(frag_norm, f0, count, fs)
-        frag_filt_1 = filter.filt(frag_norm, count, fs, f0, note[count])
+        a = filter.fft_filter(frag, f0, count, fs)
+        frag_filt_1 = filter.filt(frag, count, fs, f0, note[count])
 
         p = pitch.pitch_dec(a, count, fs, f0)
         
         pitch_onetone = []
         for i, j in enumerate(p):
             pitch_onetone.append(j)
-        envelope.env_write(count, envelope.normalize(envelope.envelope(frag_filt_1, count, fs, 10, 7), 0, 1))
+        envelope.env_write(count, envelope.envelope(frag_filt_1, count, fs, 10, 7))
         pitch_contour.append(pitch_onetone)
         t.append(time.time() - time_start)
     for j, i in enumerate(pitch_contour):
