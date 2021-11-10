@@ -7,6 +7,17 @@ from sklearn import preprocessing
 from scipy.interpolate import interp1d
 import scipy.io.wavfile
 from tqdm import tqdm
+from scipy.signal import savgol_filter
+
+def find_env_curve(env):
+
+    env = savgol_filter(env, 9, 3)
+    plt.plot(env)
+    plt.show()
+
+
+
+    pass
 
 
 def normalize(arr, t_min, t_max):

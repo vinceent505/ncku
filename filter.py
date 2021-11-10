@@ -76,7 +76,7 @@ def filt(frag, num, fs, base_freq, note):
     # fig.tight_layout()
     # plt.show()
 
-    print("num:", num, "base freq:", base_freq, "note:", note)
+    # print("num:", num, "base freq:", base_freq, "note:", note)
 
 
     down = resample.downsample(frag, fs, n)

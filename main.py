@@ -83,6 +83,8 @@ if __name__ == "__main__":
         a = filter.fft_filter(frag, f0, count, fs)
         frag_filt_1 = filter.filt(frag, count, fs, f0, note[count])
 
+        envelope.find_env_curve(frag_filt_1)
+
         p = pitch.pitch_dec(a, count, fs, f0)
         
         pitch_onetone = []
