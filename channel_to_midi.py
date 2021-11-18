@@ -4,32 +4,27 @@ import pandas as pd
 import mido
 from mido import Message, MidiFile, MidiTrack
 import channel_num
-
+import math
+import cv2
+from scipy.ndimage import interpolation
 
 def mapping(sourceValue, sourceRangeMin, sourceRangeMax, targetRangeMin, targetRangeMax):
     return targetRangeMin + ((targetRangeMax - targetRangeMin) * (sourceValue - sourceRangeMin)) / (sourceRangeMax - sourceRangeMin)
 
 
+
+
 if __name__ == "__main__":
 
 
-    num_input = channel_num.find_channel()
+    total_channel_num = channel_num.find_channel()
 
-    file_path = "envelope_out/"
-    envelope=[]
-    for i in range(20):
-        note_path = file_path + "envelope" + str(i) + ".wav"
-        fs, envelope_data = wavfile.read(note_path)
-        envelope.append(envelope_data)
 
-    csv_path = "start_end.csv"
+    csv_path = "final_output_csvs/Bach_sonata_no1.csv"
     csv = pd.read_csv(csv_path)
-    csv = csv[0:-1]
 
 
 
-    start_file = pd.read_csv("new_start_time.csv")
-    end_file = pd.read_csv("end_time.csv")
 
 
     midinote=[]
@@ -46,12 +41,26 @@ if __name__ == "__main__":
     gap=[]
     end = []
     first=True
-    for time in zip(start_file["start"], end_file["end"]):
+    for time in zip(csv["start"], csv["end"]):
         start.append(mido.second2tick(time[0], 480, tempo))
         end.append(mido.second2tick(time[1], 480, tempo))
         tick = mido.second2tick(time[1] - time[0], 480, tempo)
-        gap.append(tick)
+        gap.append(int(math.ceil(tick)))
+    print(gap)
 
+
+    csv = pd.read_csv(csv_path)
+    pitch_tmplist=list(csv["pitch"])
+    pitch_list = {}
+    for i, item in enumerate(pitch_tmplist):
+        t = item[1:-1].split(',')
+        for j, k in enumerate(t):
+            if k=='nan' or k==' nan':
+                t[j] = audiolazy.midi2freq(midinote[i])
+        t = [float(j) for j in t]
+
+        out = interpolation.zoom(t, gap[i]/len(t))
+        pitch_list[i] = out
 
     outfile = MidiFile()
     track = MidiTrack()
@@ -63,7 +72,7 @@ if __name__ == "__main__":
     track.append(Message('control_change', channel = 0, control = 58, value = 10, time = 0 ))
     first=True
 
-    for num_channel in range(num_input):
+    for num_channel in range(total_channel_num):
         prev_value = 0
         outfile = MidiFile()
         track = MidiTrack()
@@ -73,26 +82,20 @@ if __name__ == "__main__":
         track.append(Message('control_change', channel = 0, control = 56, value = 127, time = 0 ))
         track.append(Message('control_change', channel = 0, control = 57, value = 127, time = 0 ))
         track.append(Message('control_change', channel = 0, control = 58, value = 10, time = 0 ))
-        count = 0
-        pre_note = midinote[num_channel]
-        for j in range(len(midinote)):
-            if(j%num_input)==num_channel:
-                if(j==num_channel):
-                    track.append(Message('note_on', channel = 0, note=midinote[j], velocity=127, time = int(start[j])))
-                else:
-                    if(pre_note == midinote[j]):
-                        track.append(Message('note_on', channel = 0, note=midinote[j], velocity=127, time = int(start[j])-int(end[j-num_input])))
-                    else:
-                        track.append(Message('note_off', note=midinote[j-num_input], velocity=127, time = int(start[j])-int(end[j-num_input])))
-                        track.append(Message('note_on', channel = 0, note=midinote[j], velocity=127, time = 0))
-                count = 0
 
-            temp = len(envelope[j]) / int(gap[j])
-            expression = 0
-            for i in range(0, len(envelope[j]), int(temp)):
-                if(j%num_input)==num_channel:
-                    track.append(Message('control_change', channel = 0, control = 11, time = 1))
-                else:
-                    count += 1
-            pre_note = midinote[j]
+        for note_num in range(len(midinote)):
+            if(note_num%total_channel_num)==num_channel:
+                if(note_num==num_channel):#每個track第一個音
+                    track.append(Message('note_on', channel = 0, note=midinote[note_num], velocity=127, time = int(start[note_num])))
+                else:#後面剩下的音
+                    track.append(Message('note_on', channel = 0, note=midinote[note_num], velocity=127, time = int(start[note_num])-int(end[note_num-total_channel_num])))
+
+
+            for tick_num in range(gap[note_num]):
+                if(note_num%total_channel_num)==num_channel:
+                    f = pitch_list[note_num][tick_num]/audiolazy.midi2freq(midinote[note_num])
+                    pitch_bend = math.log(f, 2)*8192/6
+                    track.append(Message('pitchwheel', pitch = int(pitch_bend) ,time = 1, channel = 0))
+                pass
+            track.append(Message('note_off', note=midinote[note_num], velocity=127, time = 0))
         outfile.save(filename = "bach_test_%d.mid" %num_channel)
