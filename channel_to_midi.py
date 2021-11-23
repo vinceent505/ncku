@@ -46,13 +46,13 @@ if __name__ == "__main__":
         end.append(mido.second2tick(time[1], 480, tempo))
         tick = mido.second2tick(time[1] - time[0], 480, tempo)
         gap.append(int(math.ceil(tick)))
-    print(gap)
 
 
     csv = pd.read_csv(csv_path)
     pitch_tmplist=list(csv["pitch"])
     pitch_list = {}
     for i, item in enumerate(pitch_tmplist):
+        # pitch list 
         t = item[1:-1].split(',')
         for j, k in enumerate(t):
             if k=='nan' or k==' nan':
@@ -94,7 +94,10 @@ if __name__ == "__main__":
             for tick_num in range(gap[note_num]):
                 if(note_num%total_channel_num)==num_channel:
                     f = pitch_list[note_num][tick_num]/audiolazy.midi2freq(midinote[note_num])
-                    pitch_bend = math.log(f, 2)*8192/6
+                    if f==0:
+                        pitch_bend = 0
+                    else:
+                        pitch_bend = math.log(f, 2)*8192/6
                     track.append(Message('pitchwheel', pitch = int(pitch_bend) ,time = 1, channel = 0))
                 pass
             track.append(Message('note_off', note=midinote[note_num], velocity=127, time = 0))

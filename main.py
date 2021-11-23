@@ -47,7 +47,7 @@ if __name__ == "__main__":
     for i in file['note']:
         note.append(i)
 
-    x_1, fs = librosa.load('Bach/bach_hil.wav', sr=44100)
+    x_1, fs = librosa.load('bach_test.wav', sr=44100)
     print("Normalize Start!!")
     x_1 = envelope.normalize(x_1, -1, 1)
     print("Normalize Done!!")
@@ -65,7 +65,6 @@ if __name__ == "__main__":
     t = []
     time_1 = time.time()
     for count in tqdm.trange(10):
-        print(count)
         time_start = time.time()
         if(note[count][1] == '#'):
             f0 = frequency_list[pitch_list.index(note[count][0]+note[count][2])+1]
@@ -98,23 +97,23 @@ if __name__ == "__main__":
         plt.plot(p, i)
 
 
-    col_names = ["num", "note", "start", "end", "pitch"]
+    # col_names = ["num", "note", "start", "end", "pitch"]
 
-    # d = {"note": note,
-    #      "start": start_time,
-    #      "end": end_time,
-    #      "pitch": pitch_contour
+    # # d = {"note": note,
+    # #      "start": start_time,
+    # #      "end": end_time,
+    # #      "pitch": pitch_contour
 
-    # }
+    # # }
 
-    w_file = open(output_filename, 'w')
-    fieldnames = col_names
-    writer = csv.DictWriter(w_file, fieldnames=fieldnames)
-    writer.writeheader()
-    for i in range(10):
-        d = {"num": i, "note": note[i], "start": start_time[i], "end": end_time[i], "pitch": pitch_contour[i]}
-        writer.writerow(d)
-    w_file.close()
+    # w_file = open(output_filename, 'w')
+    # fieldnames = col_names
+    # writer = csv.DictWriter(w_file, fieldnames=fieldnames)
+    # writer.writeheader()
+    # for i in range(len(note)):
+    #     d = {"num": i, "note": note[i], "start": start_time[i], "end": end_time[i], "pitch": pitch_contour[i]}
+    #     writer.writerow(d)
+    # w_file.close()
 
 
     plt.show()

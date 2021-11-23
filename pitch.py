@@ -33,7 +33,7 @@ def pitch_dec(frag, num, fs, freq):
         if np.isnan(i):
             for k in range(j):
                 pitch_values[k] = np.nan
-    print(pitch_values)
+    # print(pitch_values)
 
     return pitch_values
 
