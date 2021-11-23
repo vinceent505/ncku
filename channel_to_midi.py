@@ -5,7 +5,7 @@ import mido
 from mido import Message, MidiFile, MidiTrack
 import channel_num
 import math
-import cv2
+import matplotlib.pyplot as plt
 from scipy.ndimage import interpolation
 
 def mapping(sourceValue, sourceRangeMin, sourceRangeMax, targetRangeMin, targetRangeMax):
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     track.append(Message('control_change', channel = 0, control = 57, value = 127, time = 0 ))
     track.append(Message('control_change', channel = 0, control = 58, value = 10, time = 0 ))
     first=True
-
+    p = []
     for num_channel in range(total_channel_num):
         prev_value = 0
         outfile = MidiFile()
@@ -90,15 +90,19 @@ if __name__ == "__main__":
                 else:#後面剩下的音
                     track.append(Message('note_on', channel = 0, note=midinote[note_num], velocity=127, time = int(start[note_num])-int(end[note_num-total_channel_num])))
 
-
+            
             for tick_num in range(gap[note_num]):
                 if(note_num%total_channel_num)==num_channel:
                     f = pitch_list[note_num][tick_num]/audiolazy.midi2freq(midinote[note_num])
                     if f==0:
                         pitch_bend = 0
                     else:
-                        pitch_bend = math.log(f, 2)*8192/6
+                        pitch_bend = 12*math.log(f, 2)*8192
+                        if pitch_bend>8191:
+                            pitch_bend = 8191
+                        elif pitch_bend<-8191:
+                            pitch_bend = -8191
                     track.append(Message('pitchwheel', pitch = int(pitch_bend) ,time = 1, channel = 0))
-                pass
+                pass    
             track.append(Message('note_off', note=midinote[note_num], velocity=127, time = 0))
         outfile.save(filename = "bach_test_%d.mid" %num_channel)
