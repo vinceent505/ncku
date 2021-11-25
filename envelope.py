@@ -26,29 +26,7 @@ def find_env_curve(env, wav):
             ri.append(i)
             rj.append(j)
         pass
-
-    # plt.plot(np.repeat(wav, 2, axis=0))
-    # plt.plot(env)
-    # plt.plot(e)
-    # plt.plot(ri, rj)
-    # plt.show()
-
-    # plt.figure()
-    # plt.plot(np.repeat(wav, 2, axis=0))
-    # plt.plot(env)
-    # plt.show()
-
-    # plt.figure()
-    # plt.plot(env)
-    # plt.plot(e)
-    # plt.show()
-
-    # plt.figure()
-    # plt.plot(np.repeat(wav, 2, axis=0))
-    # plt.plot(ri, rj)
-    # plt.show()
-
-
+    return [ri, rj]
 
     pass
 

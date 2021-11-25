@@ -83,8 +83,9 @@ if __name__ == "__main__":
         a = filter.fft_filter(frag, f0, count, fs)
         frag_filt_1 = filter.filt(frag, count, fs, f0, note[count])
 
-        envelope.find_env_curve(envelope.envelope(frag_filt_1, count, fs, 10, 7), frag_filt_1)
-
+        adsr = envelope.find_env_curve(envelope.envelope(frag_filt_1, count, fs, 10, 7), frag_filt_1)
+        plt.plot(adsr)
+        plt.plot()
         p = pitch.pitch_dec(a, count, fs, f0)
         
         pitch_onetone = []
@@ -100,12 +101,6 @@ if __name__ == "__main__":
 
     col_names = ["num", "note", "start", "end", "pitch"]
 
-    # d = {"note": note,
-    #      "start": start_time,
-    #      "end": end_time,
-    #      "pitch": pitch_contour
-
-    # }
 
     w_file = open(output_filename, 'w')
     fieldnames = col_names
