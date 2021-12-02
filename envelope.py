@@ -9,24 +9,32 @@ import scipy.io.wavfile
 from tqdm import tqdm
 from scipy.signal import savgol_filter
 
+
 def find_env_curve(env, wav):
-    e = savgol_filter(env, 5001, 3)
+    e = savgol_filter(env, 3001, 4)
     ri = []
     rj = []
-    ri.append(0)
-    rj.append(0)
-
-
+    ri.append(1)
+    rj.append(e[1])
     for i, j in enumerate(e):
         if i>1:
             if (e[i]-e[i-1])*(e[i-1]-e[i-2]) <= 0:
                 ri.append(i)
                 rj.append(j)
+            # elif i>2:
+            #     if(e[i]-e[i-1])<(e[i-1]-e[i-2]):
+            #         ri.append(i)
+            #         rj.append(j)
         if i==len(e)-1:
             ri.append(i)
             rj.append(j)
         pass
-    return [ri, rj]
+
+    # plt.plot(np.linspace(0, len(wav)*2, len(wav)), wav)
+    # plt.plot(e)
+    # plt.plot(ri, rj)
+    # plt.show()
+    return np.array([ri, rj])
 
     pass
 

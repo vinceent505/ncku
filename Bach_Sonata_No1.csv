@@ -1,4 +1,4 @@
-,note,string,finger,position,start_absolute_time,end_absolute_time,start_relative_time,end_relative_time,bow_start,bow_end,contact_bow,vibrato
+,note,string,finger,position,start,end,start_relative_time,end_relative_time,bow_start,bow_end,contact_bow,vibrato
 0,G5,4,2,0,0,0.125,0,120,6,10,-1,0
 1,B-5,4,4,0,0.125,0.25,120,120,10,6,1,0
 2,G5,4,2,0,0.25,0.375,240,120,6,9,1,0

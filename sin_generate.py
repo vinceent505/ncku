@@ -1,11 +1,12 @@
 import numpy as np
-from scipy.io import wavfile
+import math
+import matplotlib.pyplot as plt
+import scipy.io.wavfile
 
-sampleRate = 44100
-frequency = 440
-length = 5
+dt = 1./44100
+time = np.arange(0., 6., dt)
+frequency = 660. - 10*np.sin(2*math.pi*time*1.)  # a 1Hz oscillation
+phase_correction = np.add.accumulate(time*np.concatenate((np.zeros(1), 2*np.pi*(frequency[:-1]-frequency[1:]))))
+waveform = np.sin(2*math.pi*time*frequency + phase_correction)
 
-t = np.linspace(0, length, sampleRate * length)  #  Produces a 5 second Audio-File
-y = np.sin(frequency * 2 * np.pi * t)  #  Has frequency of 440Hz
-
-wavfile.write('Sine.wav', sampleRate, y)
+scipy.io.wavfile.write("sine_vibrato_1.wav", 44100, waveform)

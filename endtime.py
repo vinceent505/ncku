@@ -28,7 +28,6 @@ window_size = 2048
 filename = "bach/bach_hil.wav"
 start_filename = "start_time.csv"
 note_filename = "Bach_Sonata_No1.csv"
-end_filename = "end_list.csv"
 
 def find_endtime(start_list):
 	data, fs = librosa.load(filename)

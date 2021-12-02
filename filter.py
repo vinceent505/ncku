@@ -48,11 +48,11 @@ def fft_filter(frag, base_freq, num, fs):
     # plt.show()
     # print(base_freq)
     f = np.fft.irfft(f)
-    # scipy.io.wavfile.write("out/filted_%s_1.wav" %str(num) , fs, f)
+    scipy.io.wavfile.write("out/filted_%s_1.wav" %str(num) , fs, f)
 
     return f
 
-def filt(frag, num, fs, base_freq, note):
+def filt(frag, num, fs, base_freq, note, partial):
     n = 2
 
     # up = frag
@@ -84,12 +84,12 @@ def filt(frag, num, fs, base_freq, note):
 
 
 
-    y = butter_bandpass_filter(down, base_freq/1.06*n, base_freq*1.06*n, fs, order=2)
-    for i in range(2):
-        tmp = butter_bandpass_filter(down, base_freq*(i+2)/1.06*n, base_freq*(i+2)*1.06*n, fs, order=2)
+    y = butter_bandpass_filter(down, base_freq/1.06*n, base_freq*1.06*n, fs, order=4)
+    for i in range(partial):
+        tmp = butter_bandpass_filter(down, base_freq*(i+2)/1.06*n, base_freq*(i+2)*1.06*n, fs, order=4)
         y = y + tmp
     up = resample.upsample(y, fs, n)
-    # scipy.io.wavfile.write("out/filted_%s_3.wav" %str(num) , fs, up)
+    scipy.io.wavfile.write("out/filted_" + str(num) + "_" + str(partial) + ".wav" , fs, up)
     return up
 
 def filtt(frag, num, fs, base_freq, note):

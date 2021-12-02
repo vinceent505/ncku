@@ -34,7 +34,7 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
                  
 if __name__ == "__main__":
-    # dtw.dtw()
+    dtw.dtw()
 
     note = []
     start_time = []
@@ -50,8 +50,6 @@ if __name__ == "__main__":
     print("Normalize Start!!")
     x_1 = envelope.normalize(x_1, -1, 1)
     print("Normalize Done!!")
-
-    file = pd.read_csv("start_end.csv")
     start_file = pd.read_csv("start_time.csv")
     for i in start_file['start']:
         start_time.append(i)
@@ -64,6 +62,7 @@ if __name__ == "__main__":
     t = []
     time_1 = time.time()    
     note_num = len(note)
+    # note_num = 10
 
     for count in tqdm.trange(note_num):
         time_start = time.time()
@@ -81,12 +80,15 @@ if __name__ == "__main__":
 
 
         a = filter.fft_filter(frag, f0, count, fs)
-        frag_filt_1 = filter.filt(frag, count, fs, f0, note[count])
+        frag_filt_1 = filter.filt(frag, count, fs, f0, note[count], 10)
 
         adsr = envelope.find_env_curve(envelope.envelope(frag_filt_1, count, fs, 10, 7), frag_filt_1)
-        plt.plot(adsr)
-        plt.plot()
-        p = pitch.pitch_dec(a, count, fs, f0)
+        # plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
+        # plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_1)), frag_filt_1)
+        # plt.plot(adsr[0], adsr[1])
+        # plt.show()
+        frag_filt_2 = filter.filt(frag, count, fs, f0, note[count], 0)
+        p = pitch.pitch_dec(frag_filt_1, count, fs, f0)
         
         pitch_onetone = []
         for i, j in enumerate(p):
