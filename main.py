@@ -34,7 +34,13 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
                  
 if __name__ == "__main__":
-    dtw.dtw()
+    musician_filename = "Bach/bach_Hil.wav"
+    compare_filename = "Bach/bach_syn.wav"
+    compare_csv = "Bach_Sonata_No1.csv"
+
+
+
+    start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
 
     note = []
     start_time = []
@@ -42,18 +48,22 @@ if __name__ == "__main__":
     pitch_contour = []
 
 
-    file = pd.read_csv("Bach_Sonata_No1.csv")
+    file = pd.read_csv(compare_csv)
     for i in file['note']:
         note.append(i)
 
-    x_1, fs = librosa.load('Bach/bach_Hil.wav', sr=44100)
+    x_1, fs = librosa.load(musician_filename, sr=44100)
+
+
     print("Normalize Start!!")
     x_1 = envelope.normalize(x_1, -1, 1)
     print("Normalize Done!!")
-    start_file = pd.read_csv("start_time.csv")
+
+
+    start_file = pd.read_csv(start_csv)
     for i in start_file['start']:
         start_time.append(i)
-    endtime.find_endtime(start_time)
+    endtime.find_endtime(musician_filename, compare_csv, start_time)
     end_file = pd.read_csv("end_time.csv")
     for i in end_file['end']:
         end_time.append(i)

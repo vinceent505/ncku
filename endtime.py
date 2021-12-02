@@ -25,13 +25,10 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 						,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
 window_size = 2048
-filename = "bach/bach_hil.wav"
-start_filename = "start_time.csv"
-note_filename = "Bach_Sonata_No1.csv"
 
-def find_endtime(start_list):
-	data, fs = librosa.load(filename)
-	note_file = pd.read_csv(note_filename)
+def find_endtime(musician_filename, compare_csv, start_list):
+	data, fs = librosa.load(musician_filename)
+	note_file = pd.read_csv(compare_csv)
 
 	note_list = []
 	count = 0

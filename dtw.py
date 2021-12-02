@@ -25,8 +25,8 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  , 1046.5, 1108.73, 1174.66, 1244.51, 1319.51, 1396.91, 1479.98, 1567.99, 1661.22, 1760.0, 1864.66, 1975.53
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
-def dtw():
-    file = pd.read_csv("Bach_sonata_no1.csv")
+def dtw(musician_filename, compare_filename, compare_csv):
+    file = pd.read_csv(compare_csv)
     note = []
     start_time = []
     count = 0
@@ -40,9 +40,9 @@ def dtw():
     print("length:", len(start_time))
     start_time = np.unique(start_time).tolist()
 
-    x_1, fs = librosa.load('Bach/bach_syn.wav', sr=44100)
+    x_1, fs = librosa.load(compare_filename, sr=44100)
 
-    x_2, fs = librosa.load('Bach/bach_hil.wav', sr=44100)
+    x_2, fs = librosa.load(musician_filename, sr=44100)
 
     n_fft = 4410
     hop_size = 64
@@ -130,11 +130,12 @@ def dtw():
         final_csv.append([i])
 
     name = ["start"]
-    timestr = time.strftime("%Y%m%d-%H%M%S")
-    with open("dtw_output_csvs/no1_" + timestr + ".csv", "w") as f:
+    start_time_csv = "dtw_output_csvs/no1_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)
         writer.writerows(final_csv)
+    return start_time_csv
 
 
 if __name__ == "__main__":
