@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import csv
-
+import time
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
 			,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -41,8 +41,8 @@ def find_endtime(musician_filename, compare_csv, start_list):
 
 
 	end_list = []
-	for i, time in enumerate(start_list):
-		start = time
+	for i, t in enumerate(start_list):
+		start = t
 		note = note_list[i]
 		freq = frequency_list[pitch_list.index(note)]
 		next_index = -1
@@ -97,10 +97,13 @@ def find_endtime(musician_filename, compare_csv, start_list):
 		final_csv.append([i])
 
 
-	with open("end_time.csv", "w") as f:
+	end_time_csv = "dtw_output_csvs/no1_end" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+	with open(end_time_csv, "w") as f:
 		writer = csv.writer(f)
 		writer.writerow(["end"])
 		writer.writerows(final_csv)
+
+	return end_time_csv
 		
 
 

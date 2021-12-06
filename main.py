@@ -34,13 +34,15 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
                  
 if __name__ == "__main__":
-    musician_filename = "Bach/bach_Hil.wav"
-    compare_filename = "Bach/bach_syn.wav"
-    compare_csv = "Bach_Sonata_No1.csv"
+    musician_filename = "Bach/audio/bach_Hil.wav"
+    compare_filename = "Bach/audio/bach_syn.wav"
+    compare_csv = "Bach/csv/Bach_Sonata_No1.csv"
 
 
 
-    start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
+    # start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
+    start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
+
 
     note = []
     start_time = []
@@ -63,8 +65,8 @@ if __name__ == "__main__":
     start_file = pd.read_csv(start_csv)
     for i in start_file['start']:
         start_time.append(i)
-    endtime.find_endtime(musician_filename, compare_csv, start_time)
-    end_file = pd.read_csv("end_time.csv")
+    end_csv = endtime.find_endtime(musician_filename, compare_csv, start_time)
+    end_file = pd.read_csv(end_csv)
     for i in end_file['end']:
         end_time.append(i)
 
@@ -90,20 +92,20 @@ if __name__ == "__main__":
 
 
         a = filter.fft_filter(frag, f0, count, fs)
-        frag_filt_1 = filter.filt(frag, count, fs, f0, note[count], 10)
+        frag_filt_env = filter.filt(frag, count, fs, f0, note[count], 10, 1)
 
-        adsr = envelope.find_env_curve(envelope.envelope(frag_filt_1, count, fs, 10, 7), frag_filt_1)
-        # plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
-        # plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_1)), frag_filt_1)
-        # plt.plot(adsr[0], adsr[1])
-        # plt.show()
-        frag_filt_2 = filter.filt(frag, count, fs, f0, note[count], 0)
-        p = pitch.pitch_dec(frag_filt_1, count, fs, f0)
+        adsr = envelope.find_env_curve(envelope.envelope(frag_filt_env, count, fs, 10, 7), frag_filt_env)
+        plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
+        plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_env)), frag_filt_env)
+        plt.plot(adsr[0], adsr[1])
+        plt.show()
+        frag_filt_pitch = filter.filt(frag, count, fs, f0, note[count], 0, 3)
+        p = pitch.pitch_dec(frag_filt_pitch, count, fs, f0)
         
         pitch_onetone = []
         for i, j in enumerate(p):
             pitch_onetone.append(j)
-        envelope.env_write(count, envelope.envelope(frag_filt_1, count, fs, 10, 7))
+        envelope.env_write(count, envelope.envelope(frag_filt_env, count, fs, 10, 7))
         pitch_contour.append(pitch_onetone)
         t.append(time.time() - time_start)
     for j, i in enumerate(pitch_contour):

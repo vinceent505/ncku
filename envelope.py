@@ -30,10 +30,6 @@ def find_env_curve(env, wav):
             rj.append(j)
         pass
 
-    # plt.plot(np.linspace(0, len(wav)*2, len(wav)), wav)
-    # plt.plot(e)
-    # plt.plot(ri, rj)
-    # plt.show()
     return np.array([ri, rj])
 
     pass

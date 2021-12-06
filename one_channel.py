@@ -7,7 +7,7 @@ import channel_num
 import math
 import matplotlib.pyplot as plt
 from scipy.ndimage import interpolation
-
+import time
 def mapping(sourceValue, sourceRangeMin, sourceRangeMax, targetRangeMin, targetRangeMax):
     return targetRangeMin + ((targetRangeMax - targetRangeMin) * (sourceValue - sourceRangeMin)) / (sourceRangeMax - sourceRangeMin)
 
@@ -15,9 +15,6 @@ def mapping(sourceValue, sourceRangeMin, sourceRangeMax, targetRangeMin, targetR
 
 
 if __name__ == "__main__":
-
-
-    total_channel_num = channel_num.find_channel()
 
 
     csv_path = "final_output_csvs/Bach_sonata_no1.csv"
@@ -43,20 +40,20 @@ if __name__ == "__main__":
     gap_2 = []
     release = []
     first=True
-    for time in zip(csv["start"], csv["end"]):
-        start.append(mido.second2tick(time[0], 480, tempo))
-        end.append(mido.second2tick(time[1], 480, tempo))
-        tick = mido.second2tick(time[1] - time[0], 480, tempo)
+    for t in zip(csv["start"], csv["end"]):
+        start.append(mido.second2tick(t[0], 480, tempo))
+        end.append(mido.second2tick(t[1], 480, tempo))
+        tick = mido.second2tick(t[1] - t[0], 480, tempo)
         gap.append(int(math.ceil(tick)))
         if first:
             first = False
-            previous_start = time[0]
-            previous_end = time[1]
+            previous_start = t[0]
+            previous_end = t[1]
         else:
-            gap_2.append(int(mido.second2tick(time[0]-previous_start, 480, tempo)))
-            release.append(previous_end - time[0])
-            previous_start = time[0]
-            previous_end = time[1]
+            gap_2.append(int(mido.second2tick(t[0]-previous_start, 480, tempo)))
+            release.append(previous_end - t[0])
+            previous_start = t[0]
+            previous_end = t[1]
     gap_2.append(gap[-1])
     release.append(0.001)
 
@@ -116,4 +113,7 @@ if __name__ == "__main__":
                     pitch_bend = -8191
             track.append(Message('pitchwheel', pitch = int(pitch_bend) ,time = 1, channel = 0))
         track.append(Message('note_off', note=midinote[note_num], velocity=127, time = 0))
-    outfile.save(filename = "bach_test.mid")
+    
+    midi_name = "midi/output/" + time.strftime("%m%d") + "/" +  time.strftime("%H%M%S") + ".mid"
+    print(midi_name)
+    outfile.save(filename = midi_name)

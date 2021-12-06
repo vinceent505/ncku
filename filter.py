@@ -48,49 +48,38 @@ def fft_filter(frag, base_freq, num, fs):
     # plt.show()
     # print(base_freq)
     f = np.fft.irfft(f)
-    scipy.io.wavfile.write("out/filted_%s_1.wav" %str(num) , fs, f)
 
     return f
 
-def filt(frag, num, fs, base_freq, note, partial):
-    n = 2
+def filt(frag, num, fs, base_freq, note, partial, shift_octave):
+    n = 2**shift_octave
+    if partial==0:
+        pass
 
-    # up = frag
-    # t = np.arange(len(up)) / fs
-    # analytic_signal = hilbert(up)
-    # plt.plot(analytic_signal)
-    # amplitude_envelope = np.abs(analytic_signal)
-    # instantaneous_phase = np.unwrap(np.angle(analytic_signal))
-    # instantaneous_frequency = (np.diff(instantaneous_phase) /
-    #                         (2.0*np.pi) * fs)
-    # plt.figure()
-    # plt.plot(up)
-    # fig, (ax0, ax1) = plt.subplots(nrows=2)
-    # ax0.plot(t, up, label='signal')
-    # ax0.plot(t, amplitude_envelope, label='envelope')
-    # ax0.set_xlabel("time in seconds")
-    # ax0.legend()
-    # ax1.plot(t[1:], instantaneous_frequency)
-    # ax1.set_xlabel("time in seconds")
-    # ax1.set_ylim(0.0, 120.0)
-    # fig.tight_layout()
-    # plt.show()
-
-    # print("num:", num, "base freq:", base_freq, "note:", note)
+    shifted = librosa.effects.pitch_shift(np.array(frag, dtype='float32'), fs, n_steps = shift_octave*12)
 
 
-    down = resample.downsample(frag, fs, n)
-    #scipy.io.wavfile.write("out/filted_%s_1.wav" %str(num) , fs, down)
-
-
-
-    y = butter_bandpass_filter(down, base_freq/1.06*n, base_freq*1.06*n, fs, order=4)
+    y = butter_bandpass_filter(shifted, base_freq/1.03*n, base_freq*1.03*n, fs, order=4)
     for i in range(partial):
-        tmp = butter_bandpass_filter(down, base_freq*(i+2)/1.06*n, base_freq*(i+2)*1.06*n, fs, order=4)
+        if base_freq*(i+2)*1.06*n > fs/2:
+            break
+        tmp = butter_bandpass_filter(shifted, base_freq*(i+2)/1.03*n, base_freq*(i+2)*1.03*n, fs, order=4)
+        tmp = butter_bandpass_filter(tmp, base_freq*(i+2)/1.03*n, base_freq*(i+2)*1.03*n, fs, order=4)
+        tmp = butter_bandpass_filter(tmp, base_freq*(i+2)/1.03*n, base_freq*(i+2)*1.03*n, fs, order=4)
+        scipy.io.wavfile.write("out/filted_%s_part.wav" %str(i) , fs, tmp)
         y = y + tmp
-    up = resample.upsample(y, fs, n)
-    scipy.io.wavfile.write("out/filted_" + str(num) + "_" + str(partial) + ".wav" , fs, up)
-    return up
+
+    y = librosa.effects.pitch_shift(y, fs, n_steps = shift_octave*(-12))
+    for i in range(partial, int(20000/base_freq)-1):
+        tmp = butter_bandpass_filter(frag, base_freq*(i)/1.03, base_freq*(i)*1.03, fs, order=4)
+        tmp = butter_bandpass_filter(tmp, base_freq*(i)/1.03, base_freq*(i)*1.03, fs, order=4)
+        scipy.io.wavfile.write("out/filted_%s_part.wav" %str(i) , fs, tmp)
+        y = y + tmp
+        pass
+    scipy.io.wavfile.write("out/filted_%s_all.wav" %str(num) , fs, y)
+    scipy.io.wavfile.write("out/original_%s___.wav" %str(num) , fs, np.array(frag, dtype='float32'))
+
+    return shifted
 
 def filtt(frag, num, fs, base_freq, note):
     n = 2
@@ -110,11 +99,10 @@ def harmonics_filter(freq, up, fs, num):
     for i in range(1, 10):
         if i*freq>15500:
             break
-        down = resample.downsample(up, fs, n)
-        y = butter_bandstop_filter(down, freq/1.06*n*i, freq*1.06*n*i, fs, order=2)
-        up = resample.upsample(y, fs, n)
-    
-    return up
+        shifted = librosa.effects.pitch_shift(np.array(up, dtype='float32'), fs, n_steps = 12)
+        y = butter_bandstop_filter(shifted, freq/1.06*n*i, freq*1.06*n*i, fs, order=2)
+        shifted = librosa.effects.pitch_shift(y, fs, n_steps = -12)    
+    return shifted
 
 
 

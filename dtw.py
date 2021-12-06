@@ -130,7 +130,7 @@ def dtw(musician_filename, compare_filename, compare_csv):
         final_csv.append([i])
 
     name = ["start"]
-    start_time_csv = "dtw_output_csvs/no1_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    start_time_csv = "dtw_output_csvs/no1_start_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
     with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)
