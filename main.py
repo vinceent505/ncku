@@ -92,14 +92,14 @@ if __name__ == "__main__":
 
 
         a = filter.fft_filter(frag, f0, count, fs)
-        frag_filt_env = filter.filt(frag, count, fs, f0, note[count], -1, 1)
+        frag_filt_env = filter.filt(frag, count, fs, f0, note[count], -1)
 
         adsr = envelope.find_env_curve(envelope.envelope(frag_filt_env, count, fs, 10, 7), frag_filt_env)
         plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
         plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_env)), frag_filt_env)
         plt.plot(adsr[0], adsr[1])
         plt.show()
-        frag_filt_pitch = filter.filt(frag, count, fs, f0, note[count], 1, 3)
+        frag_filt_pitch = filter.filt(frag, count, fs, f0, note[count], 1)
         p = pitch.pitch_dec(frag_filt_pitch, count, fs, f0)
         
         pitch_onetone = []
