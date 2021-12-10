@@ -21,10 +21,6 @@ def find_env_curve(env, wav):
             if (e[i]-e[i-1])*(e[i-1]-e[i-2]) <= 0:
                 ri.append(i)
                 rj.append(j)
-            # elif i>2:
-            #     if(e[i]-e[i-1])<(e[i-1]-e[i-2]):
-            #         ri.append(i)
-            #         rj.append(j)
         if i==len(e)-1:
             ri.append(i)
             rj.append(j)
