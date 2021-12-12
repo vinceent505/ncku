@@ -3,15 +3,15 @@ import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 import pandas as pd
-import envelope
-import filter
 import endtime
-import pitch
 import time
 import csv
 import harmonics
 import dtw
 import tqdm
+import note
+import envelope
+
 
 output_filename = "final_output_csvs/Bach_sonata_no1.csv"
 
@@ -44,15 +44,13 @@ if __name__ == "__main__":
     start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
 
 
-    note = []
+    note_list = []
     start_time = []
     end_time = []
     pitch_contour = []
 
 
-    file = pd.read_csv(compare_csv)
-    for i in file['note']:
-        note.append(i)
+    note_file = pd.read_csv(compare_csv)
 
     x_1, fs = librosa.load(musician_filename, sr=44100)
 
@@ -63,54 +61,40 @@ if __name__ == "__main__":
 
 
     start_file = pd.read_csv(start_csv)
-    for i in start_file['start']:
-        start_time.append(i)
-    end_csv = endtime.find_endtime(musician_filename, compare_csv, start_time)
+
+    end_csv = endtime.find_endtime(musician_filename, compare_csv, start_file["start"])
     end_file = pd.read_csv(end_csv)
-    for i in end_file['end']:
-        end_time.append(i)
+    # note_num = len(note_list)
+    note_num = 10
 
-    n_start_time = []
-    t = []
-    time_1 = time.time()    
-    note_num = len(note)
-    # note_num = 10
-
-    for count in tqdm.trange(note_num):
-        time_start = time.time()
-        if(note[count][1] == '#'):
-            f0 = frequency_list[pitch_list.index(note[count][0]+note[count][2])+1]
+    for num, (s, e, n) in enumerate(zip(start_file["start"], end_file["end"], note_file["note"])):
+        if(n[1] == '#'):
+            f0 = frequency_list[pitch_list.index(n[0]+n[2])+1]
             pass
         else:
-            f0 = frequency_list[pitch_list.index(note[count])]
-        frag = x_1[int(start_time[count]*fs):int(end_time[count]*fs)]
+            f0 = frequency_list[pitch_list.index(n)]
+        frag = x_1[int(s*fs):int(e*fs)]
+        c = note.note(num, n, frag, fs, f0, s, e)
 
-        k = filter.harmonics_filter(f0, frag, fs, count)
+        note_list.append(c)
+        plt.plot(np.linspace(c.start, c.end, len(c.pitch)), c.pitch)
+        if num == note_num:
+            break
+    plt.show()
 
-        # harmonics_ = harmonics.harmonics_poly(frag, f0, fs) #正式執行再解除註解
-        # means, covariances, weight = harmonics.noise_poly(k, f0, fs)
+    a = input()
+    t = []
+    time_1 = time.time()    
 
+    # k = filter.harmonics_filter(f0, frag, fs, count)
 
-        a = filter.fft_filter(frag, f0, count, fs)
-        frag_filt_env = filter.filt(frag, count, fs, f0, note[count], -1)
+    # harmonics_ = harmonics.harmonics_poly(frag, f0, fs) #正式執行再解除註解
+    # means, covariances, weight = harmonics.noise_poly(k, f0, fs)
 
-        adsr = envelope.find_env_curve(envelope.envelope(frag_filt_env, count, fs, 10, 7), frag_filt_env)
-        plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
-        plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_env)), frag_filt_env)
-        plt.plot(adsr[0], adsr[1])
-        plt.show()
-        frag_filt_pitch = filter.filt(frag, count, fs, f0, note[count], 1)
-        p = pitch.pitch_dec(frag_filt_pitch, count, fs, f0)
-        
-        pitch_onetone = []
-        for i, j in enumerate(p):
-            pitch_onetone.append(j)
-        envelope.env_write(count, envelope.envelope(frag_filt_env, count, fs, 10, 7))
-        pitch_contour.append(pitch_onetone)
-        t.append(time.time() - time_start)
-    for j, i in enumerate(pitch_contour):
-        p = np.linspace(start_time[j], end_time[j], len(i))
-        plt.plot(p, i)
+    # plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
+    # plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_env)), frag_filt_env)
+    # plt.plot(adsr[0], adsr[1])
+    # plt.show()
 
 
     col_names = ["num", "note", "start", "end", "pitch"]
@@ -120,15 +104,8 @@ if __name__ == "__main__":
     fieldnames = col_names
     writer = csv.DictWriter(w_file, fieldnames=fieldnames)
     writer.writeheader()
-    for i in range(note_num):
-        d = {"num": i, "note": note[i], "start": start_time[i], "end": end_time[i], "pitch": pitch_contour[i]}
+    for i in note_list:
+        d = {"num": i.num , "note": i.name, "start": i.start, "end": i.end, "pitch": i.pitch}
         writer.writerow(d)
     w_file.close()
 
-
-    plt.show()
-
-    # print("Total Time: ", time.time()-time_1)
-    # plt.figure()
-    # plt.plot(t)
-    # plt.show()

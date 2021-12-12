@@ -8,10 +8,10 @@ import math
 import matplotlib.pyplot as plt
 from scipy.ndimage import interpolation
 import time
+
+
 def mapping(sourceValue, sourceRangeMin, sourceRangeMax, targetRangeMin, targetRangeMax):
     return targetRangeMin + ((targetRangeMax - targetRangeMin) * (sourceValue - sourceRangeMin)) / (sourceRangeMax - sourceRangeMin)
-
-
 
 
 if __name__ == "__main__":
