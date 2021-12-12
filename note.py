@@ -60,17 +60,16 @@ class note:
                     y = filter.butter_bandpass_filter(self.data, i*self.base_freq/self.g, i*self.base_freq*self.g, self.fs, 4)
                     filtered += y
 
-            # plt.plot(self.data)
-            # plt.plot(filtered)
-            # plt.plot(self.stft)
-            # plt.show()
+            plt.plot(self.data)
+            plt.plot(filtered)
+            plt.plot(self.stft)
+            plt.show()
             return filtered
         else:        
             y = filter.butter_bandpass_filter(self.data, self.base_freq/self.g, self.base_freq*self.g, self.fs, 4)
             
             scipy.io.wavfile.write("out/fundamental"+str(self.num)+".wav", self.fs, y)
             return y
-            pass
 
     def pitch_dec(self):
         d = resampy.resample(self.fundamental, self.fs, 16000)

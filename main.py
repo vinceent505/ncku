@@ -74,17 +74,14 @@ if __name__ == "__main__":
         else:
             f0 = frequency_list[pitch_list.index(n)]
         frag = x_1[int(s*fs):int(e*fs)]
-        c = note.note(num, n, frag, fs, f0, s, e)
-
-        note_list.append(c)
-        plt.plot(np.linspace(c.start, c.end, len(c.pitch)), c.pitch)
+        note_list.append(note.note(num, n, frag, fs, f0, s, e))
         if num == note_num:
             break
-    plt.show()
 
-    a = input()
-    t = []
-    time_1 = time.time()    
+
+    for i in note_list:
+        plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
+    plt.show()  
 
     # k = filter.harmonics_filter(f0, frag, fs, count)
 
