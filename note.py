@@ -15,15 +15,21 @@ class note:
     def __init__(self, num, name, data, fs, base_freq, start, end):
         self.num = num
         self.name = name
-        self.data = np.array(data)
         self.fs = fs
+        self.data = np.array(data)            
+        scipy.io.wavfile.write("out/original"+str(self.num)+".wav", self.fs, self.data)
+
         self.base_freq = base_freq
         self.start = start
         self.end = end
 
         self.g = 1.04
-        self.stft = self.stft_filt()
+        self.stft = self.stft_filt()            
+        # scipy.io.wavfile.write("out/stft"+str(self.num)+".wav", self.fs, self.stft)
+
         self.filtered = self.filt(-1)
+        # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+
         self.fundamental = self.filt(1)
 
         self.envelope = self.get_envelope()
@@ -31,24 +37,25 @@ class note:
 
         self.pitch = self.pitch_dec()
         
-        self.harmonics = []
+        self.harmonics = [] #self.harmonics_poly()
         self.noise = {"means":[], "covariance":[], "weight":[]}
 
     def stft_filt(self):
         f, t, Zxx = signal.stft(self.data, self.fs, nperseg=2048)
         for i, ii in enumerate(Zxx):#f
             for k in range(100):
-                if (k+1)*self.base_freq/1.04 > self.fs/2:
+                if (k+1)*self.base_freq/self.g > self.fs/2:
                     break
                 if f[i]==0 or(f[i]>k*self.base_freq*self.g and f[i]<(k+1)*self.base_freq/self.g):
                     for j, jj in enumerate(ii):#t
                         Zxx[i][j]=0
                     break
-                if f[i]<k*self.base_freq*1.04:
+                if f[i]<k*self.base_freq*self.g:
                     break
 
         _, s = signal.istft(Zxx, self.fs, nperseg=2048)
-        return s
+        # print("stft length: ", len(s))
+        return s[:len(self.data)]
 
     def filt(self, partial):
         if partial == -1:
@@ -60,10 +67,15 @@ class note:
                     y = filter.butter_bandpass_filter(self.data, i*self.base_freq/self.g, i*self.base_freq*self.g, self.fs, 4)
                     filtered += y
 
-            plt.plot(self.data)
-            plt.plot(filtered)
-            plt.plot(self.stft)
-            plt.show()
+            # plt.plot(self.data)
+            # plt.plot(filtered)
+            # plt.show()
+            # plt.plot(self.data)
+            # plt.plot(self.stft)
+            # plt.show()
+            # plt.plot(filtered)
+            # plt.plot(self.stft)
+            # plt.show()
             return filtered
         else:        
             y = filter.butter_bandpass_filter(self.data, self.base_freq/self.g, self.base_freq*self.g, self.fs, 4)
@@ -130,6 +142,30 @@ class note:
             pass
 
         return np.array([ri, rj])
+
+    def harmonics_poly(self):
+        f, t, Zxx = signal.stft(self.data, self.fs, nperseg=2048)
+        for i, ii in enumerate(Zxx):#f
+            for k in range(100):
+                if (k+1)*self.base_freq > self.fs/2:
+                    break
+                if f[i]>k*self.base_freq and f[i]<(k+1)*self.base_freq:
+                    for j, jj in enumerate(ii):#t
+                        Zxx[i][j]=0
+                    break
+                if f[i]<k*self.base_freq:
+                    break
+
+
+
+        f_harmonics = []
+        for t in range(len(heatmap[0])):
+            harmonics = []
+            for i in freq_index:
+                harmonics.append(heatmap[int(i)][t])
+                pass
+            f_harmonics.append(harmonics)
+        return f_harmonics
 
 
 

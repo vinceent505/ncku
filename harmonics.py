@@ -64,15 +64,12 @@ def noise_poly(frag, freq, fs):
 def harmonics_poly(frag, freq, fs):
     heatmap = librosa.amplitude_to_db(np.abs(librosa.stft(frag,n_fft=noise_window)))
     freq_index = np.linspace(1, int(15500//freq), int(15500//freq))*int(freq/fs*noise_window)
-    x = np.linspace(1, len(heatmap)*fs/noise_window, len(heatmap))
     
-    a = []
-    for i in range(len(heatmap)):
-        a.append(heatmap[i][0])
     f_harmonics = []
     for t in range(len(heatmap[0])):
         harmonics = []
         for i in freq_index:
+            print(i)
             harmonics.append(heatmap[int(i)][t])
             pass
         f_harmonics.append(harmonics)

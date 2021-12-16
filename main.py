@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
+import scipy.io.wavfile
 import pandas as pd
 import endtime
 import time
@@ -32,16 +33,17 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  , 1046.5, 1108.73, 1174.66, 1244.51, 1319.51, 1396.91, 1479.98, 1567.99, 1661.22, 1760.0, 1864.66, 1975.53
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
-                 
-if __name__ == "__main__":
-    musician_filename = "Bach/audio/bach_Hil.wav"
-    compare_filename = "Bach/audio/bach_syn.wav"
-    compare_csv = "Bach/csv/Bach_Sonata_No1.csv"
+
+def main():
+    # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
+    musician_filename = "filtered_output.wav" # musician original audio
+    compare_filename = "Bach/audio/bach_syn.wav" # score synthesis audio
+    compare_csv = "Bach/csv/Bach_Sonata_No1.csv" # score midi data
 
 
 
-    # start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
-    start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
+    start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
+    # start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
 
 
     note_list = []
@@ -64,8 +66,11 @@ if __name__ == "__main__":
 
     end_csv = endtime.find_endtime(musician_filename, compare_csv, start_file["start"])
     end_file = pd.read_csv(end_csv)
-    # note_num = len(note_list)
+
+
     note_num = 10
+    note_num = -1
+
 
     for num, (s, e, n) in enumerate(zip(start_file["start"], end_file["end"], note_file["note"])):
         if(n[1] == '#'):
@@ -75,8 +80,15 @@ if __name__ == "__main__":
             f0 = frequency_list[pitch_list.index(n)]
         frag = x_1[int(s*fs):int(e*fs)]
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
+
         if num == note_num:
             break
+    
+
+    filtered_output = np.zeros(len(x_1))
+    for i in note_list:
+        filtered_output[int(i.start*i.fs):int(i.end*i.fs)] += i.stft
+    scipy.io.wavfile.write("filtered_output.wav", fs, filtered_output)
 
 
     for i in note_list:
@@ -106,3 +118,6 @@ if __name__ == "__main__":
         writer.writerow(d)
     w_file.close()
 
+                 
+if __name__ == "__main__":
+    main()
