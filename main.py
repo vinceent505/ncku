@@ -12,9 +12,9 @@ import dtw
 import tqdm
 import note
 import envelope
+import pickle
 
-
-output_filename = "final_output_csvs/Bach_sonata_no1.csv"
+output_filename = "final_output_csvs/Bach_sonata_no1"
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -36,14 +36,14 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
 def main():
     # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
-    musician_filename = "filtered_output.wav" # musician original audio
+    musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
     compare_filename = "Bach/audio/bach_syn.wav" # score synthesis audio
     compare_csv = "Bach/csv/Bach_Sonata_No1.csv" # score midi data
 
 
 
-    start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
-    # start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
+    # start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
+    start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
 
 
     note_list = []
@@ -69,7 +69,7 @@ def main():
 
 
     note_num = 10
-    note_num = -1
+    # note_num = -1
 
 
     for num, (s, e, n) in enumerate(zip(start_file["start"], end_file["end"], note_file["note"])):
@@ -80,20 +80,18 @@ def main():
             f0 = frequency_list[pitch_list.index(n)]
         frag = x_1[int(s*fs):int(e*fs)]
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
-
         if num == note_num:
             break
     
 
     filtered_output = np.zeros(len(x_1))
     for i in note_list:
-        filtered_output[int(i.start*i.fs):int(i.end*i.fs)] += i.stft
+        filtered_output[int(i.start*i.fs):int(i.end*i.fs)] += i.filtered
     scipy.io.wavfile.write("filtered_output.wav", fs, filtered_output)
 
-
+    output_list = []
     for i in note_list:
-        plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
-    plt.show()  
+        output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope,"harmonics": i.harmonics})
 
     # k = filter.harmonics_filter(f0, frag, fs, count)
 
@@ -106,18 +104,22 @@ def main():
     # plt.show()
 
 
-    col_names = ["num", "note", "start", "end", "pitch"]
+    # col_names = ["num", "note", "start", "end", "pitch", "envelope", "harmonics", "noise"]
+    # w_file = open(output_filename+".csv", 'w')
+    # fieldnames = col_names
+    # writer = csv.DictWriter(w_file, fieldnames=fieldnames)
+    # writer.writeheader()
+    # for i in note_list:
+    #     d = {"num": i.num , "note": i.name, "start": i.start, "end": i.end, "pitch": i.pitch, "envelope":i.envname, "harmonics":i.harmonics, "noise":i.noise}
+    #     writer.writerow(d)
+    # w_file.close()
 
+    with open(output_filename+".pickle", "wb") as f:
+        d = dict(enumerate(output_list))
+        pickle.dump(d, f)
 
-    w_file = open(output_filename, 'w')
-    fieldnames = col_names
-    writer = csv.DictWriter(w_file, fieldnames=fieldnames)
-    writer.writeheader()
-    for i in note_list:
-        d = {"num": i.num , "note": i.name, "start": i.start, "end": i.end, "pitch": i.pitch}
-        writer.writerow(d)
-    w_file.close()
 
                  
 if __name__ == "__main__":
     main()
+

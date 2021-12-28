@@ -45,18 +45,12 @@ def noise_poly(frag, freq, fs):
 
         gmm = gmm.fit(X=np.expand_dims(np.array(data), 1)) #要2D
         # # Evaluate GMM
-        means = []
-        covariances = []
         weights = []
-        for m, c, w in zip(gmm.means_.ravel(), gmm.covariances_.ravel(), gmm.weights_.ravel()):
-            means.append(m)
-            covariances.append(c)
+        for w in gmm.weights_.ravel():
             weights.append(w)
 
-        f_means.append(means)
-        f_covariances.append(covariances)
-        f_weights.append(weights)
-    return np.array(f_means), np.array(f_covariances), np.array(f_weights)
+        f_weights.append(np.array(weights).max())
+    return np.array(f_weights)
 
 
 

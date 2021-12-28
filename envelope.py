@@ -31,3 +31,4 @@ def envelopes_idx(s,dmax=1):
 
 def env_write(num, env, fs):
     scipy.io.wavfile.write("envelope_out/envelope%s.wav" %str(num), fs, np.array(env, dtype = "float64"))
+    return "envelope_out/envelope"+ str(num) +".wav"
