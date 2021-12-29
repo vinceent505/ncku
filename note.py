@@ -1,4 +1,5 @@
 import librosa
+import librosa.effects
 import matplotlib.pyplot as plt
 import numpy as np
 import resampy
@@ -25,7 +26,7 @@ class note:
 
         self.g = 1.04
         self.filtered = self.stft_filt()            
-        # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+        scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
 
 
         self.envname = ""
@@ -34,7 +35,7 @@ class note:
 
         self.pitch = self.pitch_dec()
         
-        self.harmonics = self.harmonics_poly()
+        self.harmonics = []#self.harmonics_poly()
         # print(len(self.harmonics))
         # for i in range(len(self.harmonics)):
         #     plt.plot(np.linspace(0, self.end-self.start, len(self.harmonics[i])), self.harmonics[i])
@@ -67,8 +68,14 @@ class note:
         return s[:len(self.data)]
 
     def pitch_dec(self):
-        d = resampy.resample(self.filtered, self.fs, 16000)
-        _, p, _, _ = crepe.predict(d, 16000, viterbi=True)
+        if self.base_freq > 1500:
+            d = resampy.resample(self.filtered, self.fs, 16000)
+            d_shift = librosa.effects.pitch_shift(d, 16000, n_steps=-12)
+            _, p, _, _ = crepe.predict(d_shift, 16000, viterbi=True)
+            p = p*2
+        else:
+            d = resampy.resample(self.filtered, self.fs, 16000)
+            _, p, _, _ = crepe.predict(d, 16000, viterbi=True)
         return p
 
 

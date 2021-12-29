@@ -69,7 +69,7 @@ def main():
 
 
     note_num = 10
-    # note_num = -1
+    note_num = -1
 
 
     for num, (s, e, n) in enumerate(zip(start_file["start"], end_file["end"], note_file["note"])):
