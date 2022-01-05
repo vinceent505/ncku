@@ -26,7 +26,7 @@ class note:
 
         self.g = 1.04
         self.filtered = self.stft_filt()            
-        scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+        # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
 
 
         self.envname = ""
@@ -35,7 +35,7 @@ class note:
 
         self.pitch = self.pitch_dec()
         
-        self.harmonics = []#self.harmonics_poly()
+        self.harmonics = self.harmonics_poly()
         # print(len(self.harmonics))
         # for i in range(len(self.harmonics)):
         #     plt.plot(np.linspace(0, self.end-self.start, len(self.harmonics[i])), self.harmonics[i])
@@ -68,14 +68,28 @@ class note:
         return s[:len(self.data)]
 
     def pitch_dec(self):
+        window_length = 1000
+        fadein_window = np.linspace(0.0, 1.0, window_length)
+        fadeout_window = np.linspace(1.0, 0.0, window_length)
+        faded = np.array(self.filtered)
+        faded[0: window_length] = faded[0: window_length] * fadein_window
+        faded[-window_length:] = faded[-window_length:] * fadeout_window
+
+        scipy.io.wavfile.write("out/faded"+str(self.num)+".wav", self.fs, faded)
+
         if self.base_freq > 1500:
-            d = resampy.resample(self.filtered, self.fs, 16000)
-            d_shift = librosa.effects.pitch_shift(d, 16000, n_steps=-12)
-            _, p, _, _ = crepe.predict(d_shift, 16000, viterbi=True)
-            p = p*2
+            dest_freq = 500
+            ratio = self.base_freq/dest_freq
+            d_upsample = resampy.resample(faded, self.fs, self.fs*ratio)
+            d = resampy.resample(d_upsample, self.fs, 16000)
+            scipy.io.wavfile.write("out/shift"+str(self.num)+".wav", 16000, d)
+            _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0, step_size = 10*ratio)
+            p = p*ratio
+            p = savgol_filter(p, 11, 3)
         else:
-            d = resampy.resample(self.filtered, self.fs, 16000)
-            _, p, _, _ = crepe.predict(d, 16000, viterbi=True)
+            d = resampy.resample(faded, self.fs, 16000)
+            _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0)
+            
         return p
 
 
@@ -141,22 +155,34 @@ class note:
         else:
             window_size = 4096
             overlap = window_size*3/4
-        f, t, Zxx = signal.stft(self.filtered, self.fs, nperseg=window_size, noverlap=overlap)
+        f, t, Zxx = signal.stft(self.filtered, self.fs,boundary=None,  nperseg=window_size, noverlap=overlap)
+        # print("Zxx: ", len(Zxx[0]))
+        # print(len(self.data))
+        # print(window_size)
+        # print(overlap)
         for i, ii in enumerate(Zxx):#f
             pass
         for k in range(10):        
             harmonics = []
-            if (k+1)*self.base_freq/self.g > self.fs/2:
+            if (k+1)*self.base_freq > self.fs/2:
                 break
-            
-            if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
-                index = int((k+1)*self.base_freq/(self.fs/window_size))
-            else:
-                index = int((k+1)*self.base_freq/(self.fs/window_size))+1
+            try:
+                if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
+                    index = int((k+1)*self.base_freq/(self.fs/window_size))
+                else:
+                    index = int((k+1)*self.base_freq/(self.fs/window_size))+1
+            except:
+                print(self.num)
+                print(self.name)
+                print(self.base_freq)
+                print(len(f))
+                print((k+1)*self.base_freq/self.g)
+                print(k)
+                quit()
             for j, jj in enumerate(Zxx[index]):#t
                 harmonics.append(20*math.log(abs(jj), 10))
             f_harmonics.append(harmonics)
-        return str(f_harmonics)
+        return f_harmonics
 
 
     def noise_poly(self):
@@ -189,7 +215,7 @@ class note:
                 for ii in i:
                     data.append(ii)
 
-            gmm = gmm.fit(X=np.expand_dims(np.array(data), 1)) #要2D
+            gmm = gmm.fit(X=np.expand_dims(np.array(data), 1)) #要2D 
             # # Evaluate GMM
             weights = []
             for w in gmm.weights_.ravel():

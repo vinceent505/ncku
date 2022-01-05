@@ -9,7 +9,7 @@ import time
 import csv
 import harmonics
 import dtw
-import tqdm
+from tqdm import tqdm
 import note
 import envelope
 import pickle
@@ -42,8 +42,8 @@ def main():
 
 
 
-    # start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
     start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
+    #start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
 
 
     note_list = []
@@ -72,7 +72,7 @@ def main():
     note_num = -1
 
 
-    for num, (s, e, n) in enumerate(zip(start_file["start"], end_file["end"], note_file["note"])):
+    for num, (s, e, n) in enumerate(tqdm(zip(start_file["start"], end_file["end"], note_file["note"]))):
         if(n[1] == '#'):
             f0 = frequency_list[pitch_list.index(n[0]+n[2])+1]
             pass
@@ -91,7 +91,7 @@ def main():
 
     output_list = []
     for i in note_list:
-        output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope,"harmonics": i.harmonics})
+        output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics})
 
     # k = filter.harmonics_filter(f0, frag, fs, count)
 
