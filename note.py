@@ -8,7 +8,9 @@ from scipy import signal
 from scipy.interpolate import interp1d
 import envelope
 import scipy.io.wavfile
+from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
+from sklearn.mixture import GaussianMixture
 import math
 import filter
 
@@ -41,7 +43,7 @@ class note:
         #     plt.plot(np.linspace(0, self.end-self.start, len(self.harmonics[i])), self.harmonics[i])
         # plt.legend(range(1, len(self.harmonics)+1))
         # plt.show()
-        self.noise = []#self.noise_poly()
+        self.noise = self.noise_poly()
 
     def stft_filt(self):
         if len(self.data)<4096:
@@ -75,14 +77,14 @@ class note:
         faded[0: window_length] = faded[0: window_length] * fadein_window
         faded[-window_length:] = faded[-window_length:] * fadeout_window
 
-        scipy.io.wavfile.write("out/faded"+str(self.num)+".wav", self.fs, faded)
+        # scipy.io.wavfile.write("out/faded"+str(self.num)+".wav", self.fs, faded)
 
         if self.base_freq > 1500:
             dest_freq = 500
             ratio = self.base_freq/dest_freq
             d_upsample = resampy.resample(faded, self.fs, self.fs*ratio)
             d = resampy.resample(d_upsample, self.fs, 16000)
-            scipy.io.wavfile.write("out/shift"+str(self.num)+".wav", 16000, d)
+            # scipy.io.wavfile.write("out/shift"+str(self.num)+".wav", 16000, d)
             _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0, step_size = 10*ratio)
             p = p*ratio
             p = savgol_filter(p, 11, 3)
@@ -156,29 +158,15 @@ class note:
             window_size = 4096
             overlap = window_size*3/4
         f, t, Zxx = signal.stft(self.filtered, self.fs,boundary=None,  nperseg=window_size, noverlap=overlap)
-        # print("Zxx: ", len(Zxx[0]))
-        # print(len(self.data))
-        # print(window_size)
-        # print(overlap)
-        for i, ii in enumerate(Zxx):#f
-            pass
+
         for k in range(10):        
             harmonics = []
             if (k+1)*self.base_freq > self.fs/2:
                 break
-            try:
-                if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
-                    index = int((k+1)*self.base_freq/(self.fs/window_size))
-                else:
-                    index = int((k+1)*self.base_freq/(self.fs/window_size))+1
-            except:
-                print(self.num)
-                print(self.name)
-                print(self.base_freq)
-                print(len(f))
-                print((k+1)*self.base_freq/self.g)
-                print(k)
-                quit()
+            if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
+                index = int((k+1)*self.base_freq/(self.fs/window_size))
+            else:
+                index = int((k+1)*self.base_freq/(self.fs/window_size))+1
             for j, jj in enumerate(Zxx[index]):#t
                 harmonics.append(20*math.log(abs(jj), 10))
             f_harmonics.append(harmonics)
@@ -187,11 +175,21 @@ class note:
 
     def noise_poly(self):
         noise = self.data-self.filtered
-        heatmap = librosa.amplitude_to_db(np.abs(librosa.stft(noise, n_fft=window_size, hop_length = window_size//4)))
-        f_means = []
-        f_covariances = []
-        f_weights = []
+
+        if len(self.data)<4096:
+            window_size = 2048
+            overlap = window_size/2
+        else:
+            window_size = 4096
+            overlap = window_size*3/4
+        _, _, Zxx = signal.stft(noise, self.fs,boundary=None,  nperseg=window_size, noverlap=overlap)
+
+        heatmap = librosa.amplitude_to_db(np.abs(Zxx))
+
+        
+        avg = []
         for i in range(len(heatmap[0])): #time
+            noise_weights = []
             poly_x = []
             poly_y = []
             for j, k in enumerate(heatmap): #freq
@@ -199,30 +197,13 @@ class note:
                     continue
 
                 poly_x.append(self.fs/window_size*j)
-                poly_y.append(heatmap[j][i])
+                if self.fs/window_size*j < 20:
+                    poly_y.append(-75)
+                else:
+                    poly_y.append(heatmap[j][i])
 
-            env = self.get_envelope(savgol_filter(poly_y, 9, 3), False, 3)
-
-            nor_env = envelope.normalize(env, 0, 1)
-            test_data = np.array(nor_env)
-            # Find peak
-            peaks, _ = find_peaks(test_data, height=-15)
-            # Fit GMM
-            gmm = GaussianMixture(n_components=len(peaks)-3, covariance_type="full", tol=0.001)
-            random_data = [np.random.uniform(i, i+1, int(1000*aa)) for i, aa in enumerate(test_data)]
-            data = []
-            for i in random_data:
-                for ii in i:
-                    data.append(ii)
-
-            gmm = gmm.fit(X=np.expand_dims(np.array(data), 1)) #要2D 
-            # # Evaluate GMM
-            weights = []
-            for w in gmm.weights_.ravel():
-                weights.append(w)
-
-            f_weights.append(np.array(weights).max())
-        return np.array(f_weights)
-
-
-
+            peaks, _ = find_peaks(poly_y, distance=15)
+            for i in peaks:
+                noise_weights.append(poly_y[i])
+            avg.append(np.array(noise_weights).mean())
+        return avg

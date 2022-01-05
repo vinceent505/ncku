@@ -93,26 +93,6 @@ def main():
     for i in note_list:
         output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics})
 
-    # k = filter.harmonics_filter(f0, frag, fs, count)
-
-    # harmonics_ = harmonics.harmonics_poly(frag, f0, fs) #正式執行再解除註解
-    # means, covariances, weight = harmonics.noise_poly(k, f0, fs)
-
-    # plt.plot(np.linspace(0, len(frag)*2, len(frag)), frag)
-    # plt.plot(np.linspace(0, len(frag)*2, len(frag_filt_env)), frag_filt_env)
-    # plt.plot(adsr[0], adsr[1])
-    # plt.show()
-
-
-    # col_names = ["num", "note", "start", "end", "pitch", "envelope", "harmonics", "noise"]
-    # w_file = open(output_filename+".csv", 'w')
-    # fieldnames = col_names
-    # writer = csv.DictWriter(w_file, fieldnames=fieldnames)
-    # writer.writeheader()
-    # for i in note_list:
-    #     d = {"num": i.num , "note": i.name, "start": i.start, "end": i.end, "pitch": i.pitch, "envelope":i.envname, "harmonics":i.harmonics, "noise":i.noise}
-    #     writer.writerow(d)
-    # w_file.close()
 
     with open(output_filename+".pickle", "wb") as f:
         d = dict(enumerate(output_list))
