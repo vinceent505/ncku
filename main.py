@@ -83,6 +83,9 @@ def main():
         if num == note_num:
             break
     
+    for i in note_list:
+        plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
+    plt.show()  
 
     filtered_output = np.zeros(len(x_1))
     for i in note_list:
@@ -91,7 +94,7 @@ def main():
 
     output_list = []
     for i in note_list:
-        output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics})
+        output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
     with open(output_filename+".pickle", "wb") as f:

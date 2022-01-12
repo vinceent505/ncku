@@ -6,6 +6,7 @@ import resampy
 import crepe
 from scipy import signal
 from scipy.interpolate import interp1d
+from scipy import fft
 import envelope
 import scipy.io.wavfile
 from scipy.signal import find_peaks
@@ -19,7 +20,7 @@ class note:
         self.num = num
         self.name = name
         self.fs = fs
-        self.data = np.array(data)            
+        self.data = np.array(data)          
         # scipy.io.wavfile.write("out/original"+str(self.num)+".wav", self.fs, self.data)
 
         self.base_freq = base_freq
@@ -27,17 +28,19 @@ class note:
         self.end = end
 
         self.g = 1.04
-        self.filtered = self.stft_filt()            
-        # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+        self.filtered = self.stft_filt()   
+        self.fundamental = self.stft_fundamental()      
+        self.harmonics = self.harmonics_poly()     
+        scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+        scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
 
 
         self.envname = ""
         self.envelope = self.get_envelope(self.filtered)
-        self.adsr = self.find_adsr()
+        self.adsr = []#self.find_adsr()
 
         self.pitch = self.pitch_dec()
         
-        self.harmonics = self.harmonics_poly()
         # print(len(self.harmonics))
         # for i in range(len(self.harmonics)):
         #     plt.plot(np.linspace(0, self.end-self.start, len(self.harmonics[i])), self.harmonics[i])
@@ -47,14 +50,14 @@ class note:
 
     def stft_filt(self):
         if len(self.data)<4096:
-            window_size = 2048
-            overlap = window_size/2
+            data_padding = np.zeros(4096)
+            data_padding[:len(self.data)] += self.data
+            input_data = data_padding
         else:
-            window_size = 4096
-            overlap = window_size*3/4
-
-
-        f, t, Zxx = signal.stft(self.data, self.fs, nperseg=window_size, noverlap=overlap)
+            input_data = self.data
+        window_size = 4096
+        overlap = 3072
+        f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
         for i, ii in enumerate(Zxx):#f
             for k in range(100):
                 if (k+1)*self.base_freq/self.g > self.fs/2:
@@ -66,6 +69,36 @@ class note:
                 if f[i]<k*self.base_freq*self.g:
                     break
         _, s = signal.istft(Zxx, self.fs, nperseg=window_size, noverlap=overlap)
+        
+        return s[:len(self.data)]
+
+
+
+        
+    def stft_fundamental(self):
+        l = False
+        if len(self.data)<4096:
+            data_padding = np.zeros(4096)
+            data_padding[:len(self.data)] += self.data
+            input_data = data_padding
+            l = True
+        else:
+            input_data = self.data
+        window_size = 4096
+        overlap = 3072
+        f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
+        for i, ii in enumerate(Zxx):#f
+            for k in range(1):
+                if (k+1)*self.base_freq/self.g > self.fs/2:
+                    break
+                if f[i]==0 or(f[i]>(k+1)*self.base_freq*self.g or f[i]<(k+1)*self.base_freq/self.g):
+                    for j, jj in enumerate(ii):#t
+                        Zxx[i][j]=0
+                    break
+                if f[i]<k*self.base_freq*self.g:
+                    break
+
+        _, s = signal.istft(Zxx, self.fs, nperseg=window_size, noverlap=overlap)
         # print("stft length: ", len(s))
         return s[:len(self.data)]
 
@@ -73,7 +106,7 @@ class note:
         window_length = 1000
         fadein_window = np.linspace(0.0, 1.0, window_length)
         fadeout_window = np.linspace(1.0, 0.0, window_length)
-        faded = np.array(self.filtered)
+        faded = np.array(self.fundamental)
         faded[0: window_length] = faded[0: window_length] * fadein_window
         faded[-window_length:] = faded[-window_length:] * fadeout_window
 
@@ -92,6 +125,10 @@ class note:
             d = resampy.resample(faded, self.fs, 16000)
             _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0)
             
+        for num, i in enumerate(p):
+            if p[num] < self.base_freq/1.06 or p[num] > self.base_freq*1.06:
+                p[num] = self.base_freq
+        
         return p
 
 
@@ -151,14 +188,18 @@ class note:
 
     def harmonics_poly(self):
         f_harmonics = []
+        window_size = 4096
+        overlap = 3072
+        l = False
+        t_len = math.ceil(len(self.data)/1024)
         if len(self.data)<4096:
-            window_size = 2048
-            overlap = window_size/2
+            data_padding = np.zeros(4096)
+            data_padding[:len(self.data)] += self.data
+            input_data = data_padding
+            l = True
         else:
-            window_size = 4096
-            overlap = window_size*3/4
-        f, t, Zxx = signal.stft(self.filtered, self.fs,boundary=None,  nperseg=window_size, noverlap=overlap)
-
+            input_data = self.data
+        f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
         for k in range(10):        
             harmonics = []
             if (k+1)*self.base_freq > self.fs/2:
@@ -168,6 +209,8 @@ class note:
             else:
                 index = int((k+1)*self.base_freq/(self.fs/window_size))+1
             for j, jj in enumerate(Zxx[index]):#t
+                if j>=t_len:
+                    break
                 harmonics.append(20*math.log(abs(jj), 10))
             f_harmonics.append(harmonics)
         return f_harmonics
@@ -176,13 +219,16 @@ class note:
     def noise_poly(self):
         noise = self.data-self.filtered
 
+        window_size = 4096
+        overlap = 3072
         if len(self.data)<4096:
-            window_size = 2048
-            overlap = window_size/2
+            data_padding = np.zeros(4096)
+            data_padding[:len(noise)] += noise
+            input_data = data_padding
+            l = True
         else:
-            window_size = 4096
-            overlap = window_size*3/4
-        _, _, Zxx = signal.stft(noise, self.fs,boundary=None,  nperseg=window_size, noverlap=overlap)
+            input_data = self.data
+        f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
 
         heatmap = librosa.amplitude_to_db(np.abs(Zxx))
 
