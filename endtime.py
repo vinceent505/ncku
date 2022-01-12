@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import csv
 import time
+import scipy.signal as signal
+from tqdm import tqdm
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
 			,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -24,12 +26,15 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 						, 1046.5, 1108.73, 1174.66, 1244.51, 1319.51, 1396.91, 1479.98, 1567.99, 1661.22, 1760.0, 1864.66, 1975.53
 						,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
-window_size = 2048
-
+window_size = 4096
+bias = 0.1
+overlap = window_size*3/4
+hop_size = window_size/4
 def find_endtime(musician_filename, compare_csv, start_list):
-	data, fs = librosa.load(musician_filename)
+	data, fs = librosa.load(musician_filename, sr=44100)
 	note_file = pd.read_csv(compare_csv)
 
+	# Create a list of the track.
 	note_list = []
 	count = 0
 	for i in note_file['note']:
@@ -40,62 +45,82 @@ def find_endtime(musician_filename, compare_csv, start_list):
 		count += 1
 
 
+	# Find the end time of each note.
 	end_list = []
-	for i, t in enumerate(start_list):
-		start = t
+	print("Finding End Time!!")
+	for i, start_time in enumerate(tqdm(start_list)):
+		if i+1==len(start_list):
+			end_time = len(data)/fs
+			end_list.append(end_time)
+			break
+
+
+		# If the note after next is the same, set it for the temporal cut time for parting whole data into pieces.
+		# Else set the start time + bias(s) for the temporal cut time.
 		note = note_list[i]
 		freq = frequency_list[pitch_list.index(note)]
-		next_index = -1
-		stop = False
+		find = False
 		for j, next_name in enumerate(note_list[i+1:i+3]):
 			if next_name == note:
-				if i==len(start_list):
-					next_start = len(data)/fs
-				next_index = j+i+1
-				end_list.append(start_list[next_index])
-				stop = True
+				cut_time = start_list[j+i+1]
+				find = True
 				break
-		if stop:
-			continue
+		if not find:
+			if(len(data)/fs - start_time)>5:
+				cut_time = start_time + 5
+			else:
+				cut_time = len(data)/fs
 
-		if(len(data)/fs - start)>5:
-			next_start = start+5
-		else:
-			next_start = len(data)/fs
 
-		frag = data[int((start+0.06)*fs) : int(next_start*fs)]#time bin = 4 * ( file_length / Ts * windowsTime)
-		heatmap = librosa.amplitude_to_db(np.abs(librosa.stft(frag,n_fft=window_size))) #frequency bins = Frames frequency gap fs/n_fft.
+		_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
+
+		heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.
+		next_time = start_list[i+1]
+		start_index = int(next_time*fs/hop_size)
+		cut_index = int(cut_time*fs/hop_size)
 
 		freq_index = int(freq/fs*window_size)
-		end_time = next_start
-		for j in range(len(heatmap[0])):
-			f = True
-			if heatmap[freq_index][j] < 20:
-				
-				x = start+(next_start-start-0.06)/len(heatmap[0])*(j+1)+0.06
-				if i<len(start_list)-1:
-					if x > start_list[i+1]:
-						end_time = x
-						f = False
-						break
-					else:
-						continue
-		# print("start:", start)
-		# print("end:", end_time)
-		# print("___________")
+		end_time = cut_time
+		fundamental_contour = np.array(heatmap[freq_index][start_index:cut_index])
 		
-		if i<len(start_list)-1:
-			if f:
-				end_time = start_list[i+1]
-		else:
-			end_time = len(data)/fs
-		end_list.append(end_time)
-	
+		
+		# Find local minimum of energy curve.
+		append = False
+		for db in range(1):
+			if not append:
+				for j in range(len(fundamental_contour)):
+					if fundamental_contour[j] <= -45:
+						end_time = j*hop_size/fs+next_time
+						local_min = fundamental_contour[j]
+						for k in range(j+1, len(fundamental_contour)):
+							if fundamental_contour[k]<local_min:
+								local_min = fundamental_contour[k]
+								end_time = k*hop_size/fs+next_time
+								continue
+							elif k+1==len(fundamental_contour):
+								break
+							elif fundamental_contour[k+1]<local_min:
+								continue
+							else:
+								break
+						end_list.append(end_time)
+						append = True
+						break
 
+		if not append and find:
+			end_time = cut_time
+			end_list.append(end_time)
+			append = True
+		if not append:
+			print("ERROR!!!!!!!")
+			print(i)
+			print(fundamental_contour)
+			plt.plot(fundamental_contour)
+			plt.show()
+			quit()
 	final_csv = []
 	for i in end_list:
 		final_csv.append([i])
-
 
 	end_time_csv = "dtw_output_csvs/no1_end" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
 	with open(end_time_csv, "w") as f:
