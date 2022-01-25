@@ -200,13 +200,13 @@ class note:
         else:
             input_data = self.filtered
         f, t, Zxx = signal.stft(input_data, self.fs, boundary = None, nperseg=window_size, noverlap=overlap)
-        plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
-        plt.title('STFT Magnitude')
-        plt.ylabel('Frequency [Hz]')
-        plt.xlabel('Time [sec]')
-        plt.figure()
-        for k in range(1, 60):
-            if k*self.base_freq >= 10000:
+        # plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
+        # plt.title('STFT Magnitude')
+        # plt.ylabel('Frequency [Hz]')
+        # plt.xlabel('Time [sec]')
+        # plt.figure()
+        for k in range(1, 100):
+            if k*self.base_freq > 20000:
                 break    
             harmonics = []
             for time in range(len(t)):
@@ -221,10 +221,10 @@ class note:
                 for c in range(-3, 3):
                     candidate.append(20*math.log(abs(Zxx[freq_index+c][time])/32768, 10))
                 harmonics.append(max(candidate))
-            plt.plot(harmonics)
+            # plt.plot(harmonics)
             f_harmonics.append(harmonics)
-        plt.legend(range(1, 11))
-        plt.show()
+        # plt.legend(range(1, 11))
+        # plt.show()
         return f_harmonics
 
 
