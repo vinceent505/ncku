@@ -29,8 +29,8 @@ class note:
 
         self.g = 1.04
         self.filtered = self.stft_filt()   
-        self.fundamental = self.stft_fundamental()      
-        self.harmonics = self.harmonics_poly()     
+        self.fundamental = self.stft_fundamental()  
+        self.pitch = self.pitch_dec()    
         scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
         scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
 
@@ -39,14 +39,14 @@ class note:
         self.envelope = self.get_envelope(self.filtered)
         self.adsr = []#self.find_adsr()
 
-        self.pitch = self.pitch_dec()
+        self.noise = self.noise_poly()
+        self.harmonics = self.harmonics_poly()     
         
         # print(len(self.harmonics))
         # for i in range(len(self.harmonics)):
         #     plt.plot(np.linspace(0, self.end-self.start, len(self.harmonics[i])), self.harmonics[i])
         # plt.legend(range(1, len(self.harmonics)+1))
         # plt.show()
-        self.noise = self.noise_poly()
 
     def stft_filt(self):
         if len(self.data)<4096:
@@ -103,12 +103,12 @@ class note:
         return s[:len(self.data)]
 
     def pitch_dec(self):
-        window_length = 1000
-        fadein_window = np.linspace(0.0, 1.0, window_length)
-        fadeout_window = np.linspace(1.0, 0.0, window_length)
-        faded = np.array(self.fundamental)
-        faded[0: window_length] = faded[0: window_length] * fadein_window
-        faded[-window_length:] = faded[-window_length:] * fadeout_window
+        length = int(len(self.data)/2)
+        fadein_window = np.linspace(0.0, 1.0, length)
+        fadeout_window = np.linspace(1.0, 0.0, length)
+        faded = np.array(self.filtered)
+        faded[0: length] = faded[0: length] * fadein_window
+        faded[-length:] = faded[-length:] * fadeout_window
 
         # scipy.io.wavfile.write("out/faded"+str(self.num)+".wav", self.fs, faded)
 
@@ -191,29 +191,57 @@ class note:
         window_size = 4096
         overlap = 3072
         l = False
-        t_len = math.ceil(len(self.data)/1024)
-        if len(self.data)<4096:
+        t_len = math.ceil(len(self.filtered)/1024)
+        if len(self.filtered)<4096:
             data_padding = np.zeros(4096)
             data_padding[:len(self.data)] += self.data
             input_data = data_padding
             l = True
         else:
-            input_data = self.data
-        f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
-        for k in range(10):        
+            input_data = self.filtered
+        f, t, Zxx = signal.stft(input_data, self.fs, boundary = None, nperseg=window_size, noverlap=overlap)
+        plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
+        plt.title('STFT Magnitude')
+        plt.ylabel('Frequency [Hz]')
+        plt.xlabel('Time [sec]')
+        plt.figure()
+        for k in range(1, 60):
+            if k*self.base_freq >= 10000:
+                break    
             harmonics = []
-            if (k+1)*self.base_freq > self.fs/2:
-                break
-            if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
-                index = int((k+1)*self.base_freq/(self.fs/window_size))
-            else:
-                index = int((k+1)*self.base_freq/(self.fs/window_size))+1
-            for j, jj in enumerate(Zxx[index]):#t
-                if j>=t_len:
+            for time in range(len(t)):
+                time_index = int(t[time]/0.01)
+                if time_index > len(self.pitch):
                     break
-                harmonics.append(20*math.log(abs(jj), 10))
+                elif time_index == len(self.pitch):
+                    freq_index = int(self.base_freq*k/(self.fs/window_size))
+                else:
+                    freq_index = int(self.pitch[time_index]*k/(self.fs/window_size))
+                candidate = []
+                for c in range(-3, 3):
+                    candidate.append(20*math.log(abs(Zxx[freq_index+c][time])/32768, 10))
+                harmonics.append(max(candidate))
+            plt.plot(harmonics)
             f_harmonics.append(harmonics)
+        plt.legend(range(1, 11))
+        plt.show()
         return f_harmonics
+
+
+
+
+        #     if (k+1)*self.base_freq > self.fs/2: 
+        #         break
+        #     if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
+        #         index = int((k+1)*self.base_freq/(self.fs/window_size))
+        #     else:
+        #         index = int((k+1)*self.base_freq/(self.fs/window_size))+1
+        #     for j, jj in enumerate(Zxx[index]):#t
+        #         if j>=t_len:
+        #             break
+        #         harmonics.append(20*math.log(abs(jj), 10))
+        #     f_harmonics.append(harmonics)
+        # return f_harmonics
 
 
     def noise_poly(self):
