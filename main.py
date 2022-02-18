@@ -103,7 +103,7 @@ def main():
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
 
-    with open"synthesis/" + output_filename + ".pickle", "wb") as f:
+    with open("synthesis/" + output_filename + ".pickle", "wb") as f:
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
                  
