@@ -140,3 +140,6 @@ def dtw(musician_filename, compare_filename, compare_csv):
 
 if __name__ == "__main__":
     dtw() 
+
+
+

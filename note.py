@@ -15,6 +15,9 @@ from sklearn.mixture import GaussianMixture
 import math
 import filter
 
+
+check = -1
+
 class note:
     def __init__(self, num, name, data, fs, base_freq, start, end):
         self.num = num
@@ -128,7 +131,8 @@ class note:
         for num, i in enumerate(p):
             if p[num] < self.base_freq/1.06 or p[num] > self.base_freq*1.06:
                 p[num] = self.base_freq
-        
+        if self.num == check:
+            print(p)
         return p
 
 
@@ -194,7 +198,7 @@ class note:
         t_len = math.ceil(len(self.filtered)/1024)
         if len(self.filtered)<4096:
             data_padding = np.zeros(4096)
-            data_padding[:len(self.data)] += self.data
+            data_padding[:len(self.filtered)] += self.filtered
             input_data = data_padding
             l = True
         else:
@@ -205,16 +209,18 @@ class note:
 
         
         f, t, Zxx = signal.stft(input_data, self.fs, boundary = None, nperseg=window_size, noverlap=overlap)
-        plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
-        plt.title('STFT Magnitude')
-        plt.ylabel('Frequency [Hz]')
-        plt.xlabel('Time [sec]')
-        plt.show()
-        # plt.figure()
+    
+        if self.num == check:
+            plt.pcolormesh(t, f, np.abs(Zxx), shading='gouraud')
+            plt.title('STFT Magnitude')
+            plt.ylabel('Frequency [Hz]')
+            plt.xlabel('Time [sec]')
+            plt.figure()
         for k in range(1, 100):
             if k*self.base_freq > 20000:
                 break    
             harmonics = []
+            check_harmonics = [[], [], [], [], [], []]
             for time in range(len(t)):
                 time_index = int(t[time]/0.01)
                 if time_index > len(self.pitch):
@@ -224,30 +230,34 @@ class note:
                 else:
                     freq_index = int(self.pitch[time_index]*k/(self.fs/window_size))
                 candidate = []
-                for c in range(-3, 3):
+                for count_check, c in enumerate(range(-3, 3)):
                     candidate.append(abs(Zxx[freq_index+c][time]))
-                harmonics.append(max(candidate))
-            # plt.plot(harmonics)
+
+
+                    if self.num == check:
+                        if k == 1:
+                            check_harmonics[count_check].append(abs(Zxx[freq_index+c][time]))
+
+                harmonics.append(20*(math.log(max(candidate), 10)))
+
+            if self.num == check:
+                # for i in check_harmonics:
+                #     plt.plot(i)
+                # print("___________")
+                # plt.legend(range(-3, 3))
+                # plt.show()
+                # plt.figure()
+                if k <= 10:
+                    plt.plot(harmonics)
+
             f_harmonics.append(harmonics)
-        # plt.legend(range(1, 11))
-        # plt.show()
+
+        if self.num == check:
+            plt.legend(range(10))
+            plt.show()
+            
         return f_harmonics
 
-
-
-
-        #     if (k+1)*self.base_freq > self.fs/2: 
-        #         break
-        #     if abs(f[int((k+1)*self.base_freq/(self.fs/window_size))]-self.base_freq) < abs(f[int((k+1)*self.base_freq/(self.fs/window_size))+1]-self.base_freq):
-        #         index = int((k+1)*self.base_freq/(self.fs/window_size))
-        #     else:
-        #         index = int((k+1)*self.base_freq/(self.fs/window_size))+1
-        #     for j, jj in enumerate(Zxx[index]):#t
-        #         if j>=t_len:
-        #             break
-        #         harmonics.append(20*math.log(abs(jj), 10))
-        #     f_harmonics.append(harmonics)
-        # return f_harmonics
 
 
     def noise_poly(self):

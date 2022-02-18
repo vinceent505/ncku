@@ -78,6 +78,8 @@ def main():
             pass
         else:
             f0 = frequency_list[pitch_list.index(n)]
+        if s>0.02:
+            s -= 0.02
         frag = x_1[int(s*fs):int(e*fs)]
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
         if num == note_num:
