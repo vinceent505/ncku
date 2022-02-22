@@ -13,8 +13,9 @@ from tqdm import tqdm
 import note
 import envelope
 import pickle
+import threading
 
-output_filename = "final_output_csvs/Bach_sonata_no1"
+output_filename = "Bach_sonata_no1"
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -33,6 +34,30 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  , 1046.5, 1108.73, 1174.66, 1244.51, 1319.51, 1396.91, 1479.98, 1567.99, 1661.22, 1760.0, 1864.66, 1975.53
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
+note_list = []
+
+def get_feature(data, fs, startfile, endfile, notefile, end_num, cur_num):
+    
+    for num in tqdm(range(len(notefile))):
+        s = startfile[num]
+        e = endfile[num]
+        n = notefile[num]
+        if(n[1] == '#'):
+            f0 = frequency_list[pitch_list.index(n[0]+n[2])+1]
+            pass
+        else:
+            f0 = frequency_list[pitch_list.index(n)]
+        if s>0.02:
+            s -= 0.02
+        frag = data[int(s*fs):int(e*fs)]
+        note_list.append(note.note(num, n, frag, fs, f0, s, e))
+        if num == end_num:
+            break
+    
+    
+
+
+
 
 def main():
     # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
@@ -46,7 +71,6 @@ def main():
     #start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
 
 
-    note_list = []
     start_time = []
     end_time = []
     pitch_contour = []
@@ -60,30 +84,22 @@ def main():
     print("Normalize Start!!")
     x_1 = envelope.normalize(x_1, -1, 1)
     print("Normalize Done!!")
-
+    
 
     start_file = pd.read_csv(start_csv)
 
     end_csv = endtime.find_endtime(musician_filename, compare_csv, start_file["start"])
     end_file = pd.read_csv(end_csv)
 
+    end_num = 10
+    end_num = -1
 
-    note_num = 10
-    note_num = -1
+    # note_thread = threading.Thread(target=get_feature, args=(x_1, fs, start_file["start"], end_file["end"], note_file["note"], end_num))
+    # note_thread.start()
+    # note_therad.join()
+    get_feature(x_1, fs, start_file["start"], end_file["end"], note_file["note"], end_num, cur_num)
 
-
-    for num, (s, e, n) in enumerate(tqdm(zip(start_file["start"], end_file["end"], note_file["note"]))):
-        if(n[1] == '#'):
-            f0 = frequency_list[pitch_list.index(n[0]+n[2])+1]
-            pass
-        else:
-            f0 = frequency_list[pitch_list.index(n)]
-        if s>0.02:
-            s -= 0.02
-        frag = x_1[int(s*fs):int(e*fs)]
-        note_list.append(note.note(num, n, frag, fs, f0, s, e))
-        if num == note_num:
-            break
+    print(note_list)
     
     for i in note_list:
         plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
@@ -99,7 +115,7 @@ def main():
         output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
-    with open(output_filename+".pickle", "wb") as f:
+    with open("final_output_csvs" + output_filename+".pickle", "wb") as f:
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
 
