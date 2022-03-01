@@ -16,7 +16,9 @@ import math
 import filter
 
 
-check = -1
+check = 0
+OVERLAP = 4096-512
+
 
 class note:
     def __init__(self, num, name, data, fs, base_freq, start, end):
@@ -59,7 +61,7 @@ class note:
         else:
             input_data = self.data
         window_size = 4096
-        overlap = 3072
+        overlap = OVERLAP
         f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
         for i, ii in enumerate(Zxx):#f
             for k in range(100):
@@ -88,7 +90,7 @@ class note:
         else:
             input_data = self.data
         window_size = 4096
-        overlap = 3072
+        overlap = OVERLAP
         f, t, Zxx = signal.stft(input_data, self.fs, nperseg=window_size, noverlap=overlap)
         for i, ii in enumerate(Zxx):#f
             for k in range(1):
@@ -193,7 +195,7 @@ class note:
     def harmonics_poly(self):
         f_harmonics = []
         window_size = 4096
-        overlap = 3072
+        overlap = OVERLAP
         l = False
         t_len = math.ceil(len(self.filtered)/1024)
         if len(self.filtered)<4096:
@@ -264,7 +266,7 @@ class note:
         noise = self.data-self.filtered
 
         window_size = 4096
-        overlap = 3072
+        overlap = OVERLAP
         if len(self.data)<4096:
             data_padding = np.zeros(4096)
             data_padding[:len(noise)] += noise

@@ -11,33 +11,33 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.io import wavfile
 import random
+import pickle
+import threading
+import time
+import multiprocessing as mp
+from multiprocessing import Manager
+import random
 ######
 SAMPLE_RATE = 44100
 WINDOW_SIZE = 4096
 HOP_SIZE = 1024
 PITCH_WIN_TIME = 0.01
 path = "./Bach_sonata_no1.pickle"
-######
-import pickle
-
 with open(path, "rb") as f:
     song = pickle.load(f)
-
-
 length = len(song.keys())
-
 time_series = np.array([0. for _ in range(int((song[length - 1]["end"]+5) * SAMPLE_RATE))])
-num = 0
-for note_name in song.keys():
+
+######
+
+
+def synthesis(note_name):
+
     note = song[note_name]
     dur = note["end"] - note["start"]
 
-    if dur < 4096 / SAMPLE_RATE:
-        WINDOW_SIZE = 4096
-        HOP_SIZE = 1024
-    else:
-        WINDOW_SIZE = 4096
-        HOP_SIZE = 1024
+    WINDOW_SIZE = 4096
+    HOP_SIZE = 512
 
     harmonics_f = note["harmonics"]
     harmonics_t = np.transpose(harmonics_f).tolist()
@@ -51,11 +51,12 @@ for note_name in song.keys():
     pitch_contour = signal.resample(pitch_contour, len(harmonics_t))
     
     # normalize harmonics
-    phases = [0 for _ in harmonics_f]
+    phases = [random.random()*360 for _ in harmonics_f]
     deltas = [0 for _ in harmonics_f]
     windows = np.array([])
     window = np.array([0 for _ in range(WINDOW_SIZE)])
     p = []
+    overlap = False
     for t, pitch in enumerate(pitch_contour):
         # initial delta value
         # supposed phases are all start from 0
@@ -91,8 +92,9 @@ for note_name in song.keys():
     #     plt.show()
     # fade in/out
     half = int(len(windows)/2)
-    windows[:half] *= [i/half for i in range(half)]
-    windows[-half:] *= [1-i/half for i in range(half)]
+    windows[:half] /= [i/half for i in range(half, 2*half)]
+    windows[-half:] /= [3-i/half for i in range(half, 2*half)]
+
 
     # envelope
     # note["envelope"] = signal.resample(note["envelope"], len(windows))
@@ -100,11 +102,33 @@ for note_name in song.keys():
 
     windows = np.array(windows, dtype=np.float32)
     # w_windows = (windows - windows.mean())/ abs(windows).max()
-    wavfile.write("./cut/whole-faded_" + str(num) + ".wav", SAMPLE_RATE, windows)
+    # wavfile.write("./cut/whole-faded_" + str(num) + ".wav", SAMPLE_RATE, windows)
     print(note["start"], note["end"])
+    # time_series[int(note["start"] * SAMPLE_RATE):int(note["start"] * SAMPLE_RATE) + len(windows)] += windows
     time_series[int(note["start"] * SAMPLE_RATE):int(note["start"] * SAMPLE_RATE) + len(windows)] += windows
-    num += 1
- 
-# time_series = (time_series - time_series.min()) / (time_series.max() - time_series.min())
-time_series = (time_series - time_series.mean()) / abs(time_series).max()
-wavfile.write("whole-faded.wav", SAMPLE_RATE, time_series)
+    # num += 1
+    pass
+
+
+
+
+
+def main():
+
+
+    now = time.time()
+    # num = 0
+
+    thread_list = []
+
+
+    for note_name in song.keys():
+        synthesis(note_name)
+
+    # time_series = (time_series - time_series.min()) / (time_series.max() - time_series.min())
+    final_output = (time_series - time_series.mean()) / abs(time_series).max()
+    wavfile.write("whole-faded.wav", SAMPLE_RATE, final_output)
+    print(time.time()-now, "s")
+
+if __name__ == "__main__":
+    main()

@@ -7,6 +7,7 @@ import csv
 import time
 import scipy.signal as signal
 from tqdm import tqdm
+from scipy.signal import savgol_filter
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
 			,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -28,8 +29,8 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
 window_size = 4096
 bias = 0.1
-overlap = window_size*3/4
-hop_size = window_size/4
+overlap = 4096-512
+hop_size = 512
 def find_endtime(musician_filename, compare_csv, start_list):
 	data, fs = librosa.load(musician_filename, sr=44100)
 	note_file = pd.read_csv(compare_csv)
@@ -60,7 +61,7 @@ def find_endtime(musician_filename, compare_csv, start_list):
 		note = note_list[i]
 		freq = frequency_list[pitch_list.index(note)]
 		find = False
-		for j, next_name in enumerate(note_list[i+1:i+3]):
+		for j, next_name in enumerate(note_list[i+1:i+5]):
 			if next_name == note:
 				cut_time = start_list[j+i+1]
 				find = True
@@ -83,13 +84,12 @@ def find_endtime(musician_filename, compare_csv, start_list):
 		end_time = cut_time
 		fundamental_contour = np.array(heatmap[freq_index][start_index:cut_index])
 		
-		
 		# Find local minimum of energy curve.
 		append = False
 		for db in range(1):
 			if not append:
-				for j in range(len(fundamental_contour)):
-					if fundamental_contour[j] <= -45:
+				for j in range(1, len(fundamental_contour)):
+					if fundamental_contour[j] <= -52:
 						end_time = j*hop_size/fs+next_time
 						local_min = fundamental_contour[j]
 						for k in range(j+1, len(fundamental_contour)):

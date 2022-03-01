@@ -13,7 +13,7 @@ from tqdm import tqdm
 import note
 import envelope
 import pickle
-import threading
+import multiprocessing as mp
 
 output_filename = "Bach_sonata_no1"
 
@@ -36,9 +36,9 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
 note_list = []
 
-def get_feature(data, fs, startfile, endfile, notefile, end_num, cur_num):
+def get_feature(data, fs, startfile, endfile, notefile):
     
-    for num in tqdm(range(len(notefile))):
+    for num in tqdm(range(len(startfile))):
         s = startfile[num]
         e = endfile[num]
         n = notefile[num]
@@ -47,13 +47,10 @@ def get_feature(data, fs, startfile, endfile, notefile, end_num, cur_num):
             pass
         else:
             f0 = frequency_list[pitch_list.index(n)]
-        if s>0.02:
-            s -= 0.02
+        if s>0.05:
+            s -= 0.05
         frag = data[int(s*fs):int(e*fs)]
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
-        if num == end_num:
-            break
-    
     
 
 
@@ -93,13 +90,21 @@ def main():
 
     end_num = 10
     end_num = -1
+    # thread_list = []
+    # for i in range(len(start_file["start"])):
+    #     thread_list.append(mp.Process(target=get_feature, args=(x_1, fs, start_file["start"], end_file["end"], note_file["note"], i)))
 
+    # for i in thread_list:
+    #     i.start()
+    
+    # for i in thread_list:
+    #     i.join()
     # note_thread = threading.Thread(target=get_feature, args=(x_1, fs, start_file["start"], end_file["end"], note_file["note"], end_num))
     # note_thread.start()
     # note_therad.join()
-    get_feature(x_1, fs, start_file["start"], end_file["end"], note_file["note"], end_num, cur_num)
+    get_feature(x_1, fs, start_file["start"], end_file["end"], note_file["note"])
 
-    print(note_list)
+    # print(note_list)
     
     for i in note_list:
         plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
