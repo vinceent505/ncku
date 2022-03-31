@@ -29,16 +29,18 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
 
 window_size = 4096
 bias = 0.1
-overlap = 4096-512
-hop_size = 512
-def find_endtime(musician_filename, compare_csv, start_list):
+hop_size = 64
+overlap = window_size-hop_size
+
+
+
+def find_endtime(musician_filename, score, order, start_list):
 	data, fs = librosa.load(musician_filename, sr=44100)
-	note_file = pd.read_csv(compare_csv)
 
 	# Create a list of the track.
 	note_list = []
 	count = 0
-	for i in note_file['note']:
+	for i in score:
 		if i[1] == '#':
 			note_list.append(pitch_list[pitch_list.index(i[0]+i[2])+1])
 		else:
@@ -49,11 +51,12 @@ def find_endtime(musician_filename, compare_csv, start_list):
 	# Find the end time of each note.
 	end_list = []
 	print("Finding End Time!!")
+	# for i, start_time in enumerate(start_list):
 	for i, start_time in enumerate(tqdm(start_list)):
-		if i+1==len(start_list):
+		if order[i]==order[-1]:
 			end_time = len(data)/fs
 			end_list.append(end_time)
-			break
+			continue
 
 
 		# If the note after next is the same, set it for the temporal cut time for parting whole data into pieces.
@@ -63,52 +66,86 @@ def find_endtime(musician_filename, compare_csv, start_list):
 		find = False
 		for j, next_name in enumerate(note_list[i+1:i+5]):
 			if next_name == note:
-				cut_time = start_list[j+i+1]
+				cut_end_time = start_list[j+i+1]
 				find = True
 				break
 		if not find:
 			if(len(data)/fs - start_time)>5:
-				cut_time = start_time + 5
+				cut_end_time = start_time + 5
 			else:
-				cut_time = len(data)/fs
+				cut_end_time = len(data)/fs
+
+
+		next_find = False
+		for c in range(1, 6):
+			if i+c>=len(start_list):
+				break
+			if start_list[i] == start_list[i+c]:
+				continue
+			else:
+				cut_start_time = start_list[i+c]
+				next_find = True
+				break
+		if not next_find:
+			end_list.append(len(data)/fs)
+			continue
+
+		# print(cut_start_time, "   ", cut_end_time)
+
+		start_index = int(cut_start_time*fs/hop_size)
+		end_index = int(cut_end_time*fs/hop_size)
+
+		freq_index = int(freq/fs*window_size)
+		end_time = cut_end_time
+
 
 
 		_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
-
 		heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.
-		next_time = start_list[i+1]
-		start_index = int(next_time*fs/hop_size)
-		cut_index = int(cut_time*fs/hop_size)
+		fundamental = np.array(heatmap[freq_index][start_index:end_index])
 
-		freq_index = int(freq/fs*window_size)
-		end_time = cut_time
-		fundamental_contour = np.array(heatmap[freq_index][start_index:cut_index])
-		
+
+
 		# Find local minimum of energy curve.
 		append = False
-		for db in range(1):
-			if not append:
-				for j in range(1, len(fundamental_contour)):
-					if fundamental_contour[j] <= -52:
-						end_time = j*hop_size/fs+next_time
-						local_min = fundamental_contour[j]
-						for k in range(j+1, len(fundamental_contour)):
-							if fundamental_contour[k]<local_min:
-								local_min = fundamental_contour[k]
-								end_time = k*hop_size/fs+next_time
-								continue
-							elif k+1==len(fundamental_contour):
-								break
-							elif fundamental_contour[k+1]<local_min:
-								continue
-							else:
-								break
-						end_list.append(end_time)
-						append = True
-						break
+		max_end = -1.0
+		for harmonic in range(1, 3):
+			fundamental_contour = np.array(heatmap[freq_index*harmonic][start_index:end_index])
+			# plt.plot(fundamental_contour)
+			# plt.show()
+			if np.min(fundamental_contour) > -40:
+				max_end = end_time
+				append = True
+				break
+			for j in range(1, len(fundamental_contour)):
+				if fundamental_contour[j] <= -52:
+					end_time = j*hop_size/fs+cut_start_time
+					local_min = fundamental_contour[j]
+					for k in range(j+1, len(fundamental_contour)):
+						if fundamental_contour[k] < -55:
+							end_time = k*hop_size/fs+cut_start_time
+							break
+						if fundamental_contour[k]<local_min:
+							local_min = fundamental_contour[k]
+							end_time = k*hop_size/fs+cut_start_time
+							continue
+						elif k+1==len(fundamental_contour):
+							break
+						elif fundamental_contour[k+1]<local_min:
+							continue
+						else:
+							break
+					if end_time > max_end:
+						max_end = end_time
+					# end_list.append(end_time)
 
-		if not append and find:
-			end_time = cut_time
+					append = True
+					break
+
+		if append:
+			end_list.append(max_end)
+		elif not append and find:
+			end_time = cut_end_time
 			end_list.append(end_time)
 			append = True
 		if not append:

@@ -7,6 +7,10 @@ import librosa
 import librosa.display
 import pandas as pd
 import csv
+from scipy import signal
+import resampy
+import crepe
+from scipy.signal import savgol_filter
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -25,27 +29,88 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  , 1046.5, 1108.73, 1174.66, 1244.51, 1319.51, 1396.91, 1479.98, 1567.99, 1661.22, 1760.0, 1864.66, 1975.53
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
-def dtw(musician_filename, compare_filename, compare_csv):
-    file = pd.read_csv(compare_csv)
+
+OVERLAP = 4096-512
+        
+def stft_fundamental(data, base_freq):
+    l = False
+    if len(data)<4096:
+        data_padding = np.zeros(4096)
+        data_padding[:len(data)] += data
+        input_data = data_padding
+        l = True
+    else:
+        input_data = data
+    window_size = 4096
+    overlap = OVERLAP
+    f, t, Zxx = signal.stft(input_data, 44100, nperseg=window_size, noverlap=overlap)
+    for i, ii in enumerate(Zxx):#f
+        for k in range(1):
+            if (k+1)*base_freq/1.04 > 44100/2:
+                break
+            if f[i]==0 or(f[i]>(k+1)*base_freq*1.04 or f[i]<(k+1)*base_freq/1.04):
+                for j, jj in enumerate(ii):#t
+                    Zxx[i][j]=0
+                break
+            if f[i]<k*base_freq*1.04:
+                break
+
+    _, s = signal.istft(Zxx, 44100, nperseg=window_size, noverlap=overlap)
+    # print("stft length: ", len(s))
+    return s[:len(data)]
+
+
+def check_start_time(start, end, data, f0):
+    data = stft_fundamental(data, f0)
+    data = np.array(data)
+    if start==0:
+        return 0
+    return start+librosa.onset.onset_detect(y=data, sr=44100, units='time')[0]
+
+
+def start_time_order(time):
+    order = []
+    o = 0
+    for i, j in enumerate(time):
+        if i==0:
+            order.append(o)
+        else:
+            if time[i] == time[i-1]:
+                order.append(o)
+            else:
+                o += 1
+                order.append(o)
+    return order
+
+
+
+
+
+
+
+
+
+def dtw(musician_filename, score_filename, score):
     note = []
     start_time = []
-    count = 0
-    for i in file['note']:
-        note.append(i)
-        count += 1
+    for i in score:
+        note.append(score[i]["name"])
+        start_time.append(score[i]["start"])
 
-
-    for i in file['start']:
-        start_time.append(i)
     print("length:", len(start_time))
-    start_time = np.unique(start_time).tolist()
 
-    x_1, fs = librosa.load(compare_filename, sr=44100)
+    x_1, fs = librosa.load(score_filename, sr=16000)
 
-    x_2, fs = librosa.load(musician_filename, sr=44100)
+    x_2, fs = librosa.load(musician_filename, sr=16000)
 
-    n_fft = 4410
+    n_fft = 4096
     hop_size = 64
+
+    start_idx = []
+    for i in start_time:
+        start_idx.append(int(i/hop_size*fs)*3)
+    start_idx_np = np.array(start_idx)
+    print(len(start_idx_np))
 
     x_1_chroma = librosa.feature.chroma_cqt(y=x_1, sr=fs, tuning=0, norm=2,
                                             hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
@@ -53,9 +118,6 @@ def dtw(musician_filename, compare_filename, compare_csv):
                                             hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
 
     D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
-    start_idx = []
-    for i in start_time:
-        start_idx.append(int(i/hop_size*fs)*3)
 
     wp_s = np.asarray(wp) * hop_size / fs
 
@@ -79,7 +141,7 @@ def dtw(musician_filename, compare_filename, compare_csv):
     lines = []
     arrows = 30
     points_idx = np.int16(np.round(np.linspace(0, wp.shape[0] - 1, arrows)))
-    start_idx_np = np.array(start_idx)
+
 
     count = 0
     first = False
@@ -117,17 +179,35 @@ def dtw(musician_filename, compare_filename, compare_csv):
     final_time = []
     for i in range(len(dtw_start_time)):
         if(i==len(dtw_start_time)-1):
-            final_time.append(sum(tmp)/len(tmp))
+            final_time.append(max(tmp))
             break
         else:
             tmp.append(dtw_start_time[i])
             if((dtw_start_time[i+1]-dtw_start_time[i])>0.01):
-                final_time.append(sum(tmp)/len(tmp))
+                final_time.append(max(tmp))
                 tmp = []
-
+    print(len(final_time))
     final_csv = []
-    for i in final_time:
-        final_csv.append([i])
+
+    start_count = 0
+    first = True
+    for i, j in enumerate(final_time):
+        if first:
+            final_csv.append([0])
+            first = False
+        else:
+            final_csv.append([final_time[i]])
+        for count in range(start_count+1, len(start_time)):
+            if start_time[start_count] == start_time[count]:
+                final_csv.append([final_time[i]])
+                start_count += 1
+                continue
+            else:
+                break
+        start_count += 1
+        pass
+    # for i in final_time:
+    #     final_csv.append([i])
 
     name = ["start"]
     start_time_csv = "dtw_output_csvs/no1_start_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"

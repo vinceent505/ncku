@@ -17,10 +17,12 @@ import time
 import multiprocessing as mp
 from multiprocessing import Manager
 import random
+from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 ######
 SAMPLE_RATE = 44100
 WINDOW_SIZE = 4096
-HOP_SIZE = 1024
+HOP_SIZE = 64
 PITCH_WIN_TIME = 0.01
 path = "./Bach_sonata_no1.pickle"
 with open(path, "rb") as f:
@@ -30,14 +32,60 @@ time_series = np.array([0. for _ in range(int((song[length - 1]["end"]+5) * SAMP
 
 ######
 
+def envelopes_idx(s,dmax=1):
+    # locals max
+    lmax = (np.diff(np.sign(np.diff(s))) < 0).nonzero()[0] + 1 
+    # the following might help in some case by cutting the signal in "half"
+    s_mid = np.mean(s)
+    # pre-sort of local max based on sign 
+    lmax = lmax[np.array(s)[lmax]>np.array(s_mid)]
+    # global min of dmin-chunks of locals min 
+    lmax = lmax[[i+np.argmax(np.array(s)[lmax[i:i+dmax]]) for i in range(0,len(lmax),dmax)]]
+    return lmax
+
+def get_envelope(data, L = 7):
+    idx = envelopes_idx(data, 7)
+    high_data = []
+    for i in range(len(data)):
+        if(i in idx):
+            if(data[i] < 0):
+                high_data.append(0)
+            else:
+                high_data.append(data[i])
+        else:
+            high_data.append(0)
+    pre_inter_x = []
+    pre_inter_y = []
+    pre_inter_x.append(0)
+    pre_inter_y.append(data[idx[0]])
+    for i in idx:
+        pre_inter_x.append(i)
+        pre_inter_y.append(data[i])
+        last = data[i]
+    pre_inter_x.append(len(data))
+    pre_inter_y.append(last)
+    f = interp1d(pre_inter_x, pre_inter_y)
+    post_inter_x = []
+    post_inter_y = []
+    for i in range(len(data)):
+        if float(f(i))<0:
+            post_inter_y.append(0)
+        else:
+            post_inter_y.append(float(f(i)))
+        post_inter_x.append(i/44100)
+
+    return post_inter_y
 
 def synthesis(note_name):
 
     note = song[note_name]
     dur = note["end"] - note["start"]
+    samples = int(dur*SAMPLE_RATE)
+
+    print(note["start"])
 
     WINDOW_SIZE = 4096
-    HOP_SIZE = 512
+    HOP_SIZE = 64
 
     harmonics_f = note["harmonics"]
     harmonics_t = np.transpose(harmonics_f).tolist()
@@ -48,66 +96,68 @@ def synthesis(note_name):
     normalized_range = normalized_max_value - normalized_min_value
     # timescale (pitch contour) > timescale (harmonics)
     # interpolate pitch contour
-    pitch_contour = signal.resample(pitch_contour, len(harmonics_t))
+    pitch_contour = signal.resample(pitch_contour, samples)
+
     
-    # normalize harmonics
-    phases = [random.random()*360 for _ in harmonics_f]
-    deltas = [0 for _ in harmonics_f]
     windows = np.array([])
-    window = np.array([0 for _ in range(WINDOW_SIZE)])
-    p = []
-    overlap = False
-    for t, pitch in enumerate(pitch_contour):
-        # initial delta value
-        # supposed phases are all start from 0
-        for f, _ in enumerate(harmonics_f):
-            deltas[f] = (pitch * (f+1)) / SAMPLE_RATE * (2 * math.pi)
+    window_sum = np.array([0.0 for _ in range(samples)])
+    deltas = 0.0
 
-        # single window manipulate
-        window = [0 for _ in range(WINDOW_SIZE)]
-        for i in range(WINDOW_SIZE):
-            for f, harmonic in enumerate(harmonics_t[t]):
-                harmonic = -pow(10, harmonic / 20)
-                phases[f] += deltas[f]
-                window[i] += harmonic * math.sin(phases[f]) # + (random.random() - 1) / 2 * 0.0005
 
-        # append to windows
-        ## multiply by triangle window
-        tri = signal.triang(WINDOW_SIZE)
-        # overlap and add
-        window *= tri
-        if len(windows) == 0:
-            windows = window
-        else:
-            windows[-(WINDOW_SIZE - HOP_SIZE):] += window[ :(WINDOW_SIZE - HOP_SIZE)]
-            windows = np.concatenate((windows, window[(WINDOW_SIZE - HOP_SIZE):]))
-            for i in range(WINDOW_SIZE-HOP_SIZE):
-                for f, harmonic in enumerate(harmonics_t[t]):
-                    phases[f] -= deltas[f]
+    for harmonic_num , harmonic in enumerate(harmonics_f):
+        window = np.array([0.0 for _ in range(samples)])
+        phase = 0.0
         
-    #     if num == 31:
-    #         p.append(harmonics_t[t][0])
-    # if num == 31:
-    #     plt.plot(p)
-    #     plt.show()
-    # fade in/out
-    half = int(len(windows)/2)
-    windows[:half] /= [i/half for i in range(half, 2*half)]
-    windows[-half:] /= [3-i/half for i in range(half, 2*half)]
+        harmonic = signal.resample(harmonic, samples)
+        for t , pitch in enumerate(pitch_contour):
+            if (harmonic_num+1)*pitch>2000:
+                pitch = note["frequency"]
+            delta = (pitch * (harmonic_num+1)) / SAMPLE_RATE * (2 * math.pi)
+            phase += delta
+            h = -pow(10, harmonic[t] / 20)
+            window[t] += h * math.sin(phase)
+        
 
+        window_sum += window
+    
 
-    # envelope
-    # note["envelope"] = signal.resample(note["envelope"], len(windows))
-    # windows *= note["envelope"]
+    window_sum = (window_sum - window_sum.mean()) / abs(window_sum).max()
+    # wavfile.write("out/before_"+str(note["num"])+".wav", 44100, window_sum)
+    divide = []
+    window_sum = np.array(window_sum)
+    window_env = get_envelope(window_sum)
+    window_env = savgol_filter(window_env, 701, 2)
+    perf_env = np.array(note["envelope"])
 
-    windows = np.array(windows, dtype=np.float32)
-    # w_windows = (windows - windows.mean())/ abs(windows).max()
-    # wavfile.write("./cut/whole-faded_" + str(num) + ".wav", SAMPLE_RATE, windows)
-    print(note["start"], note["end"])
-    # time_series[int(note["start"] * SAMPLE_RATE):int(note["start"] * SAMPLE_RATE) + len(windows)] += windows
-    time_series[int(note["start"] * SAMPLE_RATE):int(note["start"] * SAMPLE_RATE) + len(windows)] += windows
-    # num += 1
-    pass
+    env_len = min(len(perf_env), len(window_env))
+    window_env = window_env[:env_len]
+    perf_env = perf_env[:env_len]
+
+    for w, p in zip(window_env, perf_env):
+        if w==0:
+            divide.append(0)
+        else:
+            divide.append(p/w)
+    # plt.plot(divide)
+    # plt.plot(savgol_filter(divide, 1501, 2))
+    # plt.show()
+
+    divide = savgol_filter(divide, 1501, 2)
+    for i, j in enumerate(divide):
+        window_sum[i] *= j
+
+    window_length = 1000
+    fadein_window = np.linspace(0.0, 1.0, window_length)
+    fadeout_window = np.linspace(1.0, 0.0, window_length)
+    window_sum = np.array(window_sum)
+    window_sum[0: window_length] = window_sum[0: window_length] * fadein_window
+    window_sum[-window_length:] = window_sum[-window_length:] * fadeout_window
+
+    # wavfile.write("out/after_"+str(note["num"])+".wav", 44100, window_sum)
+
+    
+    time_series[int(note["start"] * SAMPLE_RATE):int(note["start"] * SAMPLE_RATE) + len(window_sum)] += window_sum
+
 
 
 
@@ -117,7 +167,6 @@ def main():
 
 
     now = time.time()
-    # num = 0
 
     thread_list = []
 
@@ -125,7 +174,6 @@ def main():
     for note_name in song.keys():
         synthesis(note_name)
 
-    # time_series = (time_series - time_series.min()) / (time_series.max() - time_series.min())
     final_output = (time_series - time_series.mean()) / abs(time_series).max()
     wavfile.write("whole-faded.wav", SAMPLE_RATE, final_output)
     print(time.time()-now, "s")

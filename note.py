@@ -16,7 +16,7 @@ import math
 import filter
 
 
-check = 0
+check = -1
 OVERLAP = 4096-512
 
 
@@ -111,7 +111,7 @@ class note:
         length = int(len(self.data)/2)
         fadein_window = np.linspace(0.0, 1.0, length)
         fadeout_window = np.linspace(1.0, 0.0, length)
-        faded = np.array(self.filtered)
+        faded = np.array(self.fundamental)
         faded[0: length] = faded[0: length] * fadein_window
         faded[-length:] = faded[-length:] * fadeout_window
 
@@ -129,7 +129,7 @@ class note:
         else:
             d = resampy.resample(faded, self.fs, 16000)
             _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0)
-            
+            p = savgol_filter(p, len(p)//2*2-1, 3)
         for num, i in enumerate(p):
             if p[num] < self.base_freq/1.06 or p[num] > self.base_freq*1.06:
                 p[num] = self.base_freq
@@ -195,7 +195,7 @@ class note:
     def harmonics_poly(self):
         f_harmonics = []
         window_size = 4096
-        overlap = OVERLAP
+        overlap = 4096-64
         l = False
         t_len = math.ceil(len(self.filtered)/1024)
         if len(self.filtered)<4096:

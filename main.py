@@ -47,9 +47,9 @@ def get_feature(data, fs, startfile, endfile, notefile):
             pass
         else:
             f0 = frequency_list[pitch_list.index(n)]
-        if s>0.05:
-            s -= 0.05
         frag = data[int(s*fs):int(e*fs)]
+        print(s)
+        print(e)
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
     
 
@@ -58,22 +58,34 @@ def get_feature(data, fs, startfile, endfile, notefile):
 
 def main():
     # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
-    musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
-    compare_filename = "Bach/audio/bach_syn.wav" # score synthesis audio
-    compare_csv = "Bach/csv/Bach_Sonata_No1.csv" # score midi data
+    music_name = "presto"
+
+    perf_filepath = "input/audio/perf/"
+    score_filepath = "input/audio/score/"
 
 
 
-    start_csv = 'dtw_output_csvs/no1_start_20211202-153647.csv'
-    #start_csv = dtw.dtw(musician_filename, compare_filename, compare_csv)
+    musician_filename = perf_filepath+music_name+".wav" # musician original audio
+    score_filename = score_filepath+music_name+".wav" # score synthesis audio
+    score_data = "input/data/"+music_name+".pickle" # score midi data
 
 
+
+    start_csv = 'dtw_output_csvs/no1_start_20220308-213651.csv'
+    
+    with open(score_data, "rb") as f:
+        score = pickle.load(f)
+    
+
+    ########################
+    start_csv = dtw.dtw(musician_filename, score_filename, score)
+    ########################
+    
     start_time = []
     end_time = []
     pitch_contour = []
 
-
-    note_file = pd.read_csv(compare_csv)
+    note_name = []
 
     x_1, fs = librosa.load(musician_filename, sr=44100)
 
@@ -84,40 +96,43 @@ def main():
     
 
     start_file = pd.read_csv(start_csv)
+    for n, i in enumerate(start_file["start"]):
+        if i>0.02:
+            i-=0.02
+        no = score[n]["name"]
+        note_name.append(no)
+        if(no[1] == '#'):
+            f0 = frequency_list[pitch_list.index(no[0]+no[2])+1]
+            pass
+        else:
+            f0 = frequency_list[pitch_list.index(no)]
+        s = dtw.check_start_time(i, i+0.1, x_1[int((i)*fs):int((i+0.1)*fs)], f0)
+        start_time.append(s)
 
-    end_csv = endtime.find_endtime(musician_filename, compare_csv, start_file["start"])
+
+
+    order = dtw.start_time_order(start_file["start"])
+    print(note_name)
+    end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time)
+
     end_file = pd.read_csv(end_csv)
 
-    end_num = 10
-    end_num = -1
-    # thread_list = []
-    # for i in range(len(start_file["start"])):
-    #     thread_list.append(mp.Process(target=get_feature, args=(x_1, fs, start_file["start"], end_file["end"], note_file["note"], i)))
 
-    # for i in thread_list:
-    #     i.start()
-    
-    # for i in thread_list:
-    #     i.join()
-    # note_thread = threading.Thread(target=get_feature, args=(x_1, fs, start_file["start"], end_file["end"], note_file["note"], end_num))
-    # note_thread.start()
-    # note_therad.join()
-    get_feature(x_1, fs, start_file["start"], end_file["end"], note_file["note"])
+    get_feature(x_1, fs, start_time, end_file["end"], note_name)
 
-    # print(note_list)
-    
+
+
+
+
+
+    #output    
     for i in note_list:
         plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
     plt.show()  
 
-    filtered_output = np.zeros(len(x_1))
-    for i in note_list:
-        filtered_output[int(i.start*i.fs):int(i.end*i.fs)] += i.filtered
-    scipy.io.wavfile.write("filtered_output.wav", fs, filtered_output)
-
     output_list = []
     for i in note_list:
-        output_list.append({"num": i.num,"name": i.name,"start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
+        output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
     with open("final_output_csvs" + output_filename+".pickle", "wb") as f:
