@@ -135,10 +135,6 @@ def main():
         output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
-    with open("final_output_csvs" + output_filename+".pickle", "wb") as f:
-        d = dict(enumerate(output_list))
-        pickle.dump(d, f)
-
     with open("synthesis/" + output_filename + ".pickle", "wb") as f:
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
