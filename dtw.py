@@ -8,10 +8,17 @@ import librosa.display
 import pandas as pd
 import csv
 from scipy import signal
+import scipy.io.wavfile
+
 import resampy
 import crepe
 from scipy.signal import savgol_filter
 
+
+HOP_SIZE = 512
+OVERLAP = 4096-512
+window_size = 4096
+overlap = OVERLAP
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
         ,'C2', 'D-2', 'D2', 'E-2', 'E2', 'F2', 'G-2', 'G2', 'A-2', 'A2', 'B-2', 'B2'
@@ -30,7 +37,6 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
 
-OVERLAP = 4096-512
         
 def stft_fundamental(data, base_freq):
     l = False
@@ -41,8 +47,6 @@ def stft_fundamental(data, base_freq):
         l = True
     else:
         input_data = data
-    window_size = 4096
-    overlap = OVERLAP
     f, t, Zxx = signal.stft(input_data, 44100, nperseg=window_size, noverlap=overlap)
     for i, ii in enumerate(Zxx):#f
         for k in range(1):
@@ -56,16 +60,50 @@ def stft_fundamental(data, base_freq):
                 break
 
     _, s = signal.istft(Zxx, 44100, nperseg=window_size, noverlap=overlap)
-    # print("stft length: ", len(s))
+    
     return s[:len(data)]
 
 
-def check_start_time(start, end, data, f0):
+def check_start_time(start, end, data, f0, num):
     data = stft_fundamental(data, f0)
+    o_env = librosa.onset.onset_strength(data, 44100)
     data = np.array(data)
     if start==0:
         return 0
-    return start+librosa.onset.onset_detect(y=data, sr=44100, units='time')[0]
+
+    onset = librosa.onset.onset_detect(y=data, sr=44100)
+    times = librosa.times_like(o_env, sr=44100)
+    if len(onset) == 0:
+        return start
+
+    if len(onset)>1:
+        if o_env[onset[0]]*2.5<o_env[onset[1]] and onset[1] != len(o_env)-1 and onset[1] != len(o_env)-2:
+    #         print(num, "_____________")
+    #         print(onset)
+    #         print(start+times[onset])
+    #         print("start: ", start+times[onset[1]])
+    #         plt.plot(o_env)
+    #         plt.show()
+            return start + times[onset[1]]
+        else:
+    #         print(num, "_____________")
+    #         print(onset)
+    #         print(start+times[onset])
+    #         print("start: ", start+times[onset[0]])
+    #         plt.plot(o_env)     
+    #         plt.show()
+            return start + times[onset[0]]
+
+    # # for i in onset:
+    # #     print(i)
+    # #     print(start+times[i])
+    # #     print(o_env[i])
+        
+    # print(num, "_____________")
+    # print("start: ", start+times[onset[0]])
+    # plt.plot(o_env)
+    # plt.show()
+    return start+times[onset[0]]
 
 
 def start_time_order(time):
@@ -179,12 +217,12 @@ def dtw(musician_filename, score_filename, score):
     final_time = []
     for i in range(len(dtw_start_time)):
         if(i==len(dtw_start_time)-1):
-            final_time.append(max(tmp))
+            final_time.append(min(tmp))
             break
         else:
             tmp.append(dtw_start_time[i])
             if((dtw_start_time[i+1]-dtw_start_time[i])>0.01):
-                final_time.append(max(tmp))
+                final_time.append(min(tmp))
                 tmp = []
     print(len(final_time))
     final_csv = []

@@ -36,7 +36,6 @@ overlap = window_size-hop_size
 
 def find_endtime(musician_filename, score, order, start_list):
 	data, fs = librosa.load(musician_filename, sr=44100)
-
 	# Create a list of the track.
 	note_list = []
 	count = 0

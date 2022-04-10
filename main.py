@@ -14,8 +14,8 @@ import note
 import envelope
 import pickle
 import multiprocessing as mp
+import syn
 
-output_filename = "Bach_sonata_no1"
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
         ,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -48,8 +48,8 @@ def get_feature(data, fs, startfile, endfile, notefile):
         else:
             f0 = frequency_list[pitch_list.index(n)]
         frag = data[int(s*fs):int(e*fs)]
-        print(s)
-        print(e)
+        # print(s)
+        # print(e)
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
     
 
@@ -97,8 +97,6 @@ def main():
 
     start_file = pd.read_csv(start_csv)
     for n, i in enumerate(start_file["start"]):
-        if i>0.02:
-            i-=0.02
         no = score[n]["name"]
         note_name.append(no)
         if(no[1] == '#'):
@@ -106,13 +104,13 @@ def main():
             pass
         else:
             f0 = frequency_list[pitch_list.index(no)]
-        s = dtw.check_start_time(i, i+0.1, x_1[int((i)*fs):int((i+0.1)*fs)], f0)
+        s = dtw.check_start_time(i, i+0.2, x_1[int((i)*fs):int((i+0.2)*fs)], f0, n)
         start_time.append(s)
-
+    # print(start_time)
 
 
     order = dtw.start_time_order(start_file["start"])
-    print(note_name)
+    # print(note_name)
     end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time)
 
     end_file = pd.read_csv(end_csv)
@@ -135,9 +133,12 @@ def main():
         output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
-    with open("synthesis/" + output_filename + ".pickle", "wb") as f:
+    with open("output/pickle/" + music_name + ".pickle", "wb") as f:
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
+
+    syn.syn(music_name)
+    
                  
 if __name__ == "__main__":
     main()

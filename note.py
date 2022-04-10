@@ -26,7 +26,7 @@ class note:
         self.name = name
         self.fs = fs
         self.data = np.array(data)          
-        # scipy.io.wavfile.write("out/original"+str(self.num)+".wav", self.fs, self.data)
+        # scipy.io.wavfile.write("test/original"+str(self.num)+".wav", self.fs, self.data)
 
         self.base_freq = base_freq
         self.start = start
@@ -36,8 +36,8 @@ class note:
         self.filtered = self.stft_filt()   
         self.fundamental = self.stft_fundamental()  
         self.pitch = self.pitch_dec()    
-        scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
-        scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
+        #scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+        #scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
 
 
         self.envname = ""
@@ -125,11 +125,13 @@ class note:
             # scipy.io.wavfile.write("out/shift"+str(self.num)+".wav", 16000, d)
             _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0, step_size = 10*ratio)
             p = p*ratio
-            p = savgol_filter(p, 11, 3)
+            if len(p)//2*2-1 > 3:
+                p = savgol_filter(p, len(p)//2*2-1, 3)
         else:
             d = resampy.resample(faded, self.fs, 16000)
             _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0)
-            p = savgol_filter(p, len(p)//2*2-1, 3)
+            if len(p)//2*2-1 > 3:
+                p = savgol_filter(p, len(p)//2*2-1, 3)
         for num, i in enumerate(p):
             if p[num] < self.base_freq/1.06 or p[num] > self.base_freq*1.06:
                 p[num] = self.base_freq
@@ -139,7 +141,7 @@ class note:
 
 
 
-    def get_envelope(self, data, wr = True, L = 7):
+    def get_envelope(self, data, wr = False, L = 7):
         idx = envelope.envelopes_idx(data, L)
         high_data = []
         for i in range(len(data)):
