@@ -96,6 +96,8 @@ def main():
     
 
     start_file = pd.read_csv(start_csv)
+    order = dtw.start_time_order(start_file["start"])
+    
     for n, i in enumerate(start_file["start"]):
         no = score[n]["name"]
         note_name.append(no)
@@ -104,12 +106,11 @@ def main():
             pass
         else:
             f0 = frequency_list[pitch_list.index(no)]
-        s = dtw.check_start_time(i, i+0.2, x_1[int((i)*fs):int((i+0.2)*fs)], f0, n)
+        s = dtw.check_start_time(i, x_1[int((i)*fs):int((i+0.2)*fs)], f0, n, order)
         start_time.append(s)
     # print(start_time)
 
 
-    order = dtw.start_time_order(start_file["start"])
     # print(note_name)
     end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time)
 
@@ -124,9 +125,9 @@ def main():
 
 
     #output    
-    for i in note_list:
-        plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
-    plt.show()  
+    # for i in note_list:
+    #     plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
+    # plt.show()  
 
     output_list = []
     for i in note_list:
