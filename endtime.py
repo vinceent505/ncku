@@ -51,6 +51,8 @@ def find_endtime(musician_filename, score, order, start_list):
 	end_list = []
 	print("Finding End Time!!")
 	# for i, start_time in enumerate(start_list):
+	_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
+	heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.	
 	for i, start_time in enumerate(tqdm(start_list)):
 		if order[i]==order[-1]:
 			end_time = len(data)/fs
@@ -60,37 +62,58 @@ def find_endtime(musician_filename, score, order, start_list):
 
 		# If the note after next is the same, set it for the temporal cut time for parting whole data into pieces.
 		# Else set the start time + bias(s) for the temporal cut time.
-		note = note_list[i]
-		freq = frequency_list[pitch_list.index(note)]
-		find = False
-		for j, next_name in enumerate(note_list[i+1:i+5]):
-			if next_name == note:
-				cut_end_time = start_list[j+i+1]
-				find = True
-				break
-		if not find:
-			if(len(data)/fs - start_time)>5:
-				cut_end_time = start_time + 5
-			else:
-				cut_end_time = len(data)/fs
 
-
+		idx = 0
 		next_find = False
 		for c in range(1, 6):
 			if i+c>=len(start_list):
 				break
-			if start_list[i] == start_list[i+c]:
+			if order[i] == order[i+c]:
 				continue
 			else:
-				cut_start_time = start_list[i+c]
+				cut_start_time = start_list[i+c]+0.05
 				next_find = True
+				idx=c
 				break
 		if not next_find:
 			end_list.append(len(data)/fs)
+			idx = len(start_list)-1
 			continue
 
-		# print(cut_start_time, "   ", cut_end_time)
 
+
+
+		note = note_list[i]
+		freq = frequency_list[pitch_list.index(note)]
+		find = False
+		p = 0
+		for j, next_name in enumerate(note_list[i+idx+1:i+6]):
+			if next_name == note:
+				if order[i+idx]==order[i+j+idx+1]:
+					continue
+				cut_end_time = start_list[j+i+1+idx]
+				find = True
+				p = j+i+1+idx
+				break
+		if not find:
+			for c in range(2, len(start_list)-i):
+				if order[i]==order[i+c]-5:
+					cut_end_time = start_list[i+c]
+					break
+				else:
+					cut_end_time = len(data)/fs
+					
+		if(cut_start_time == cut_end_time):
+			end_list.append(cut_start_time)
+			continue
+		elif(cut_start_time > cut_end_time):
+			cut_end_time += 0.05
+		# print(start_time)
+		# print(order[i+idx])
+		# print(order[p])
+		# print(cut_start_time)
+		# print(cut_end_time)
+		# print(find)
 		start_index = int(cut_start_time*fs/hop_size)
 		end_index = int(cut_end_time*fs/hop_size)
 
@@ -99,8 +122,6 @@ def find_endtime(musician_filename, score, order, start_list):
 
 
 
-		_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
-		heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.
 		fundamental = np.array(heatmap[freq_index][start_index:end_index])
 
 
@@ -148,12 +169,9 @@ def find_endtime(musician_filename, score, order, start_list):
 			end_list.append(end_time)
 			append = True
 		if not append:
-			print("ERROR!!!!!!!")
-			print(i)
-			print(fundamental_contour)
-			plt.plot(fundamental_contour)
+			end_list.append(np.argmin(fundamental)*hop_size/fs+cut_start_time)
+			plt.plot(fundamental)
 			plt.show()
-			quit()
 	final_csv = []
 	for i in end_list:
 		final_csv.append([i])
