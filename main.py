@@ -14,6 +14,7 @@ import note
 import envelope
 import pickle
 import multiprocessing as mp
+import sys
 import syn
 
 
@@ -56,7 +57,7 @@ def get_feature(data, fs, startfile, endfile, notefile):
 
 
 
-def main():
+def main(do_dtw = True, do_end = True):
     # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
     music_name = "presto"
 
@@ -70,15 +71,16 @@ def main():
     score_data = "input/data/"+music_name+".pickle" # score midi data
 
 
-
-    start_csv = 'dtw_output_csvs/no1_start_20220308-213651.csv'
     
     with open(score_data, "rb") as f:
         score = pickle.load(f)
     
 
+
+    start_csv = "dtw_output_csvs/start.csv"
     ########################
-    start_csv = dtw.dtw(musician_filename, score_filename, score)
+    if do_dtw:
+        start_csv = dtw.dtw(musician_filename, score_filename, score)
     ########################
     
     start_time = []
@@ -97,22 +99,46 @@ def main():
 
     start_file = pd.read_csv(start_csv)
     order = dtw.start_time_order(start_file["start"])
-    
+    prev_start = 0.0
     for n, i in enumerate(start_file["start"]):
         no = score[n]["name"]
         note_name.append(no)
+
+
         if(no[1] == '#'):
             f0 = frequency_list[pitch_list.index(no[0]+no[2])+1]
             pass
         else:
             f0 = frequency_list[pitch_list.index(no)]
-        s = dtw.check_start_time(i, x_1[int((i)*fs):int((i+0.2)*fs)], f0, n, order)
+
+        if n != len(start_file["start"])-1:
+            if i>0.05:
+                i -= 0.05
+            s = dtw.check_start_time(i, x_1[int((i)*fs):int((start_file["start"][n+1])*fs)], f0, n, order, prev_start)
+        else:
+            if i>0.05:
+                i -= 0.05
+            s = dtw.check_start_time(i, x_1[int((i)*fs):int(len(x_1)-1)], f0, n, order, 0.0)
+        prev_start = s
+        print(s)
+
         start_time.append(s)
-    # print(start_time)
+
+    final_time = []
+    for i in start_time:
+        final_time.append([i])
+    col_name = ["start"]
+    start_time_csv = "dtw_output_csvs/final_start" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    with open(start_time_csv, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(col_name)
+        writer.writerows(final_time)
 
 
     # print(note_name)
-    end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time)
+    end_csv = "dtw_output_csvs/end.csv"
+    if do_end:
+        end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time)
 
     end_file = pd.read_csv(end_csv)
 
@@ -142,5 +168,19 @@ def main():
     
                  
 if __name__ == "__main__":
-    main()
+    if len(sys.argv)>1:
+        if sys.argv[1] == "1":
+            start = True
+        else:
+            start = False
+        
+        if sys.argv[2] == "1":
+            end = True
+        else:
+            end = False
+        print("NO DTW")
+        main(start, end)
+    else:
+        print("DTW")
+        main()
 

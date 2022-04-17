@@ -52,11 +52,11 @@ def stft_fundamental(data, base_freq):
         for k in range(1):
             if (k+1)*base_freq/1.04 > 44100/2:
                 break
-            if f[i]==0 or(f[i]>(k+1)*base_freq*1.04 or f[i]<(k+1)*base_freq/1.04):
+            if f[i]==0 or(f[i]>(k+1)*base_freq+7.0 or f[i]<(k+1)*base_freq-7.0):
                 for j, jj in enumerate(ii):#t
                     Zxx[i][j]=0
                 break
-            if f[i]<k*base_freq*1.04:
+            if f[i]<k*base_freq+7.0:
                 break
 
     _, s = signal.istft(Zxx, 44100, nperseg=window_size, noverlap=overlap)
@@ -64,46 +64,60 @@ def stft_fundamental(data, base_freq):
     return s[:len(data)]
 
 
-def check_start_time(start, data, f0, num, order):
-    data = stft_fundamental(data, f0)
-    o_env = librosa.onset.onset_strength(data, 44100)
-    data = np.array(data)
+def check_start_time(start, data, f0, num, order, prev_start):
+    onset_env = librosa.onset.onset_strength(y=np.array(data), sr=44100,aggregate=np.median,fmax=8000, n_mels=256)
+    # data = stft_fundamental(data, f0)
+    # # plt.plot(onset_env)
+    # # plt.show()
+    # o_env = librosa.onset.onset_strength(data, 44100)
+
+    # data = np.array(data)
     if order[num]==0:
         return 0
+    onset = librosa.onset.onset_detect(onset_envelope=onset_env, sr=44100)
+    times = librosa.times_like(onset_env, sr=44100)
 
-    onset = librosa.onset.onset_detect(y=data, sr=44100)
-    times = librosa.times_like(o_env, sr=44100)
     if len(onset) == 0:
-        return start
-
+        return start+0.05
     if len(onset)>1:
-        if o_env[onset[0]]*2.5<o_env[onset[1]] and onset[1] != len(o_env)-1 and onset[1] != len(o_env)-2:
+        for i in onset:
+            if (start+times[i])<prev_start:
+                continue
+            else:
+                return start+times[i]
+    # if len(onset)>1:
+    #     if o_env[onset[0]]*2.5<o_env[onset[1]] and onset[1] != len(o_env)-1 and onset[1] != len(o_env)-2:
     #         print(num, "_____________")
     #         print(onset)
     #         print(start+times[onset])
     #         print("start: ", start+times[onset[1]])
     #         plt.plot(o_env)
     #         plt.show()
-            return start + times[onset[1]]
-        else:
+    #         return start + times[onset[1]]
+    #     else:
     #         print(num, "_____________")
     #         print(onset)
     #         print(start+times[onset])
     #         print("start: ", start+times[onset[0]])
     #         plt.plot(o_env)     
     #         plt.show()
-            return start + times[onset[0]]
+    #         if prev_start > (start+times[onset[0]]):
+    #             return start + times[onset[1]]
+    #         else:
+    #             return start + times[onset[0]]
 
-    # # for i in onset:
-    # #     print(i)
-    # #     print(start+times[i])
-    # #     print(o_env[i])
+    # # # for i in onset:
+    # # #     print(i)
+    # # #     print(start+times[i])
+    # # #     print(o_env[i])
         
     # print(num, "_____________")
     # print("start: ", start+times[onset[0]])
     # plt.plot(o_env)
     # plt.show()
     return start+times[onset[0]]
+    
+
 
 
 def start_time_order(time):
@@ -154,7 +168,7 @@ def dtw(musician_filename, score_filename, score):
     x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
                                             hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
 
-    D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
+    _, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
     wp_s = np.array(wp)[::-1] * hop_size / fs
 
 
