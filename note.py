@@ -35,17 +35,24 @@ class note:
         self.g = 1.04
         self.filtered = self.stft_filt()   
         self.fundamental = self.stft_fundamental()  
-        self.pitch = self.pitch_dec()    
-        #scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
+        self.pitch = self.pitch_dec()  
+        # plt.plot(self.pitch)
+        # plt.show()  
+        # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
         #scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
 
 
         self.envname = ""
         self.envelope = self.get_envelope(self.filtered)
+        # plt.plot(self.envelope)
+        # plt.show()
         self.adsr = []#self.find_adsr()
 
         self.noise = self.noise_poly()
         self.harmonics = self.harmonics_poly()     
+        # for i in self.harmonics:
+        #     plt.plot(i)
+        # plt.show()
         
         # print(len(self.harmonics))
         # for i in range(len(self.harmonics)):

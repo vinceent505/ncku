@@ -98,7 +98,14 @@ def main(do_dtw = True, do_end = True):
     
 
     start_file = pd.read_csv(start_csv)
-    order = dtw.start_time_order(start_file["start"])
+
+
+    
+    order_time = []
+    for i in score:
+        order_time.append(score[i]["start"])
+    order = dtw.start_time_order(order_time)
+    
     prev_start = 0.0
     for n, i in enumerate(start_file["start"]):
         no = score[n]["name"]
@@ -111,15 +118,23 @@ def main(do_dtw = True, do_end = True):
         else:
             f0 = frequency_list[pitch_list.index(no)]
 
-        if n != len(start_file["start"])-1:
+
+        for o_n, o in enumerate(order):
+            if order[n] == o-1:
+                nxt_start = start_file["start"][o_n]
+        if n>0:
             if i>0.05:
                 i -= 0.05
-            s = dtw.check_start_time(i, x_1[int((i)*fs):int((start_file["start"][n+1])*fs)], f0, n, order, prev_start)
+            s = dtw.check_start_time(i, x_1[int((i)*fs):int((nxt_start)*fs)], f0, n, order, prev_start)
         else:
             if i>0.05:
                 i -= 0.05
             s = dtw.check_start_time(i, x_1[int((i)*fs):int(len(x_1)-1)], f0, n, order, 0.0)
-        prev_start = s
+        if order[n] == order[-1]:
+            print(s)
+            continue
+        elif order[n+1] != order[n]:
+            prev_start = s
         print(s)
 
         start_time.append(s)

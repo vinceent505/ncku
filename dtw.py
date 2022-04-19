@@ -65,7 +65,7 @@ def stft_fundamental(data, base_freq):
 
 
 def check_start_time(start, data, f0, num, order, prev_start):
-    onset_env = librosa.onset.onset_strength(y=np.array(data), sr=44100,aggregate=np.median,fmax=8000, n_mels=256)
+    onset_env = librosa.onset.onset_strength(y=np.array(data), sr=44100)
     # data = stft_fundamental(data, f0)
     # # plt.plot(onset_env)
     # # plt.show()
@@ -77,11 +77,28 @@ def check_start_time(start, data, f0, num, order, prev_start):
     onset = librosa.onset.onset_detect(onset_envelope=onset_env, sr=44100)
     times = librosa.times_like(onset_env, sr=44100)
 
+    # print(num, "_____________")
+    # print(onset)
+    # print(start+times[onset])
+    # plt.plot(start+times, onset_env)
+    # plt.show()
+    if start>36:
+        plt.plot(start+times, onset_env)
+        plt.plot(start+times, librosa.onset.onset_strength(y=np.array(data), sr=44100))
+        print(start+times[onset])
+        print(order[num])
+        print(f0)
+        plt.show()
     if len(onset) == 0:
         return start+0.05
     if len(onset)>1:
+        # print(num, "_____________")
+        # print(onset)
+        # print(start+times[onset])
+        # plt.plot(onset_env)
+        # plt.show()
         for i in onset:
-            if (start+times[i])<prev_start:
+            if (start+times[i])<prev_start+0.05:
                 continue
             else:
                 return start+times[i]
@@ -129,9 +146,13 @@ def start_time_order(time):
         else:
             if time[i] == time[i-1]:
                 order.append(o)
+                print(o)
+                print(time[i])
             else:
                 o += 1
                 order.append(o)
+                print(o)
+                print(time[i])
     return order
 
 
