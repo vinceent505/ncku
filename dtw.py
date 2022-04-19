@@ -66,72 +66,21 @@ def stft_fundamental(data, base_freq):
 
 def check_start_time(start, data, f0, num, order, prev_start):
     onset_env = librosa.onset.onset_strength(y=np.array(data), sr=44100)
-    # data = stft_fundamental(data, f0)
-    # # plt.plot(onset_env)
-    # # plt.show()
-    # o_env = librosa.onset.onset_strength(data, 44100)
 
-    # data = np.array(data)
     if order[num]==0:
         return 0
     onset = librosa.onset.onset_detect(onset_envelope=onset_env, sr=44100)
     times = librosa.times_like(onset_env, sr=44100)
 
-    # print(num, "_____________")
-    # print(onset)
-    # print(start+times[onset])
-    # plt.plot(start+times, onset_env)
-    # plt.show()
-    if start>36:
-        plt.plot(start+times, onset_env)
-        plt.plot(start+times, librosa.onset.onset_strength(y=np.array(data), sr=44100))
-        print(start+times[onset])
-        print(order[num])
-        print(f0)
-        plt.show()
     if len(onset) == 0:
         return start+0.05
     if len(onset)>1:
-        # print(num, "_____________")
-        # print(onset)
-        # print(start+times[onset])
-        # plt.plot(onset_env)
-        # plt.show()
         for i in onset:
             if (start+times[i])<prev_start+0.05:
                 continue
             else:
                 return start+times[i]
-    # if len(onset)>1:
-    #     if o_env[onset[0]]*2.5<o_env[onset[1]] and onset[1] != len(o_env)-1 and onset[1] != len(o_env)-2:
-    #         print(num, "_____________")
-    #         print(onset)
-    #         print(start+times[onset])
-    #         print("start: ", start+times[onset[1]])
-    #         plt.plot(o_env)
-    #         plt.show()
-    #         return start + times[onset[1]]
-    #     else:
-    #         print(num, "_____________")
-    #         print(onset)
-    #         print(start+times[onset])
-    #         print("start: ", start+times[onset[0]])
-    #         plt.plot(o_env)     
-    #         plt.show()
-    #         if prev_start > (start+times[onset[0]]):
-    #             return start + times[onset[1]]
-    #         else:
-    #             return start + times[onset[0]]
-
-    # # # for i in onset:
-    # # #     print(i)
-    # # #     print(start+times[i])
-    # # #     print(o_env[i])
         
-    # print(num, "_____________")
-    # print("start: ", start+times[onset[0]])
-    # plt.plot(o_env)
-    # plt.show()
     return start+times[onset[0]]
     
 
@@ -146,13 +95,9 @@ def start_time_order(time):
         else:
             if time[i] == time[i-1]:
                 order.append(o)
-                print(o)
-                print(time[i])
             else:
                 o += 1
                 order.append(o)
-                print(o)
-                print(time[i])
     return order
 
 

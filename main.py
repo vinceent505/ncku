@@ -105,12 +105,10 @@ def main(do_dtw = True, do_end = True):
     for i in score:
         order_time.append(score[i]["start"])
     order = dtw.start_time_order(order_time)
-    
     prev_start = 0.0
     for n, i in enumerate(start_file["start"]):
         no = score[n]["name"]
         note_name.append(no)
-
 
         if(no[1] == '#'):
             f0 = frequency_list[pitch_list.index(no[0]+no[2])+1]
@@ -130,14 +128,16 @@ def main(do_dtw = True, do_end = True):
             if i>0.05:
                 i -= 0.05
             s = dtw.check_start_time(i, x_1[int((i)*fs):int(len(x_1)-1)], f0, n, order, 0.0)
+        start_time.append(s)
         if order[n] == order[-1]:
             print(s)
+            print(n)
             continue
         elif order[n+1] != order[n]:
             prev_start = s
         print(s)
+        print(n)
 
-        start_time.append(s)
 
     final_time = []
     for i in start_time:
