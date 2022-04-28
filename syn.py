@@ -157,8 +157,8 @@ def synthesis(note, time_series):
 
 
 
-def syn(name = "presto"):
-    path = "output/pickle/" + name + ".pickle"
+def syn(musician, name):
+    path = "output/pickle/" +musician+"_"+ name + ".pickle"
     with open(path, "rb") as f:
         song = pickle.load(f)
     length = len(song.keys())
@@ -175,8 +175,11 @@ def syn(name = "presto"):
         synthesis(note, time_series)
 
     final_output = (time_series - time_series.mean()) / abs(time_series).max()
-    wavfile.write("output/audio/" + name + ".wav", SAMPLE_RATE, final_output)
-    print(time.time()-now, "s")
+    wavfile.write("output/audio/" + musician + "_" + name + "_output.wav", SAMPLE_RATE, final_output)
+    t = time.time()-now
+    print(int(t/60), "min ", t%60, "s")
 
 if __name__ == "__main__":
-    syn()
+    musician = input()
+    music = input()
+    syn(musician, music)

@@ -60,14 +60,15 @@ def get_feature(data, fs, startfile, endfile, notefile):
 def main(do_dtw = True, do_end = True):
     # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
     music_name = "presto"
+    musician_name = "henryk" 
+    # musician_name = "hilary" 
 
-    perf_filepath = "input/audio/perf/"
-    score_filepath = "input/audio/score/"
+    perf_filepath = "input/audio/perf/" + musician_name + "/"
+    score_filepath = "input/audio/score/" + musician_name + "/"
 
 
-
-    musician_filename = perf_filepath+music_name+".wav" # musician original audio
-    score_filename = score_filepath+music_name+".wav" # score synthesis audio
+    musician_filename = perf_filepath + musician_name + "_" + music_name + "_perf.wav" # musician original audio
+    score_filename = score_filepath + musician_name + "_" + music_name + "_score.wav" # score synthesis audio
     score_data = "input/data/"+music_name+".pickle" # score midi data
 
 
@@ -77,12 +78,13 @@ def main(do_dtw = True, do_end = True):
     
 
 
-    start_csv = "dtw_output_csvs/start.csv"
+    start_csv = "dtw_output_csvs/manual/" + musician_name + "_" + music_name + "_manual.csv" 
     ########################
     if do_dtw:
-        start_csv = dtw.dtw(musician_filename, score_filename, score)
+        start_csv = dtw.dtw(musician_filename, score_filename, score, music_name, musician_name)
     ########################
-    
+    # for i in score:
+    #     print(score[i]["start"])
     start_time = []
     end_time = []
     pitch_contour = []
@@ -91,20 +93,28 @@ def main(do_dtw = True, do_end = True):
 
     x_1, fs = librosa.load(musician_filename, sr=44100)
 
-
-    print("Normalize Start!!")
-    x_1 = envelope.normalize(x_1, -1, 1)
-    print("Normalize Done!!")
-    
-
     start_file = pd.read_csv(start_csv)
+
 
 
     
     order_time = []
     for i in score:
         order_time.append(score[i]["start"])
-    order = dtw.start_time_order(order_time)
+    order = dtw.start_time_order(order_time)[:len(start_file["start"])]
+
+
+    print("Normalize Start!!")
+    x_1 = envelope.normalize(x_1, -1, 1)
+    print("Normalize Done!!")
+
+
+    
+
+
+
+
+
     prev_start = 0.0
     for n, i in enumerate(start_file["start"]):
         no = score[n]["name"]
@@ -120,14 +130,14 @@ def main(do_dtw = True, do_end = True):
         for o_n, o in enumerate(order):
             if order[n] == o-1:
                 nxt_start = start_file["start"][o_n]
+                break
+            nxt_start = len(x_1)/fs
         if n>0:
             if i>0.05:
                 i -= 0.05
             s = dtw.check_start_time(i, x_1[int((i)*fs):int((nxt_start)*fs)], f0, n, order, prev_start)
         else:
-            if i>0.05:
-                i -= 0.05
-            s = dtw.check_start_time(i, x_1[int((i)*fs):int(len(x_1)-1)], f0, n, order, 0.0)
+            s = 0.0
         start_time.append(s)
         if order[n] == order[-1]:
             print(s)
@@ -143,7 +153,7 @@ def main(do_dtw = True, do_end = True):
     for i in start_time:
         final_time.append([i])
     col_name = ["start"]
-    start_time_csv = "dtw_output_csvs/final_start" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    start_time_csv = "dtw_output_csvs/manual/" + musician_name + "_" + music_name + "final_start" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
     with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(col_name)
@@ -151,9 +161,9 @@ def main(do_dtw = True, do_end = True):
 
 
     # print(note_name)
-    end_csv = "dtw_output_csvs/end.csv"
+    end_csv = "dtw_output_csvs/" + musician_name + "_" + music_name + "end.csv"
     if do_end:
-        end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time)
+        end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time, musician_name, music_name)
 
     end_file = pd.read_csv(end_csv)
 
@@ -175,11 +185,11 @@ def main(do_dtw = True, do_end = True):
         output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
-    with open("output/pickle/" + music_name + ".pickle", "wb") as f:
+    with open("output/pickle/" + musician_name + "_" + music_name + ".pickle", "wb") as f:
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
 
-    syn.syn(music_name)
+    syn.syn(musician_name, music_name)
     
                  
 if __name__ == "__main__":

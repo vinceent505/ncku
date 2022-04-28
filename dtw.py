@@ -71,6 +71,11 @@ def check_start_time(start, data, f0, num, order, prev_start):
         return 0
     onset = librosa.onset.onset_detect(onset_envelope=onset_env, sr=44100)
     times = librosa.times_like(onset_env, sr=44100)
+    # if num > 710 and num < 720:
+    #     print(start+times[onset])
+    #     plt.plot(start+times, onset_env)
+    #     plt.show()
+
 
     if len(onset) == 0:
         return start+0.05
@@ -108,18 +113,24 @@ def start_time_order(time):
 
 
 
-def dtw(musician_filename, score_filename, score):
+def dtw(musician_filename, score_filename, score, music_name, musician_name):
     note = []
     start_time = []
     for i in score:
         note.append(score[i]["name"])
         start_time.append(score[i]["start"])
 
-    print("length:", len(start_time))
+
+
 
     x_1, fs = librosa.load(score_filename, sr=16000)
 
     x_2, fs = librosa.load(musician_filename, sr=16000)
+
+    for i in start_time:
+        if i>len(x_1)/fs:
+            start_time.remove(i)
+    print("length:", len(start_time))
 
     n_fft = 4096
     hop_size = 64
@@ -210,7 +221,7 @@ def dtw(musician_filename, score_filename, score):
 
 
     name = ["start"]
-    start_time_csv = "dtw_output_csvs/no1_start_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    start_time_csv = "dtw_output_csvs/" + musician_name + "_" + music_name + "_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
     with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)

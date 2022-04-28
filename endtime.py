@@ -34,7 +34,7 @@ overlap = window_size-hop_size
 
 
 
-def find_endtime(musician_filename, score, order, start_list):
+def find_endtime(musician_filename, score, order, start_list, musician_name, music_name):
 	data, fs = librosa.load(musician_filename, sr=44100)
 	# Create a list of the track.
 	note_list = []
@@ -108,12 +108,9 @@ def find_endtime(musician_filename, score, order, start_list):
 			continue
 		elif(cut_start_time > cut_end_time):
 			cut_end_time += 0.05
-		# print(start_time)
-		# print(order[i+idx])
-		# print(order[p])
-		# print(cut_start_time)
-		# print(cut_end_time)
-		# print(find)
+		print("______________")
+		print(i)
+		print(start_time)
 		start_index = int(cut_start_time*fs/hop_size)
 		end_index = int(cut_end_time*fs/hop_size)
 
@@ -131,8 +128,9 @@ def find_endtime(musician_filename, score, order, start_list):
 		max_end = -1.0
 		for harmonic in range(1, 3):
 			fundamental_contour = np.array(heatmap[freq_index*harmonic][start_index:end_index])
-			# plt.plot(fundamental_contour)
-			# plt.show()
+			# if start_time>9:
+			# 	plt.plot(fundamental_contour)
+			# 	plt.show()
 			if np.min(fundamental_contour) > -40:
 				max_end = end_time
 				append = True
@@ -161,6 +159,9 @@ def find_endtime(musician_filename, score, order, start_list):
 
 					append = True
 					break
+				else:
+					max_end = j*hop_size/fs+cut_start_time
+					append = True
 
 		if append:
 			end_list.append(max_end)
@@ -176,7 +177,7 @@ def find_endtime(musician_filename, score, order, start_list):
 	for i in end_list:
 		final_csv.append([i])
 
-	end_time_csv = "dtw_output_csvs/no1_end" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+	end_time_csv = "dtw_output_csvs/" + musician_name + "_" + music_name + "_end" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
 	with open(end_time_csv, "w") as f:
 		writer = csv.writer(f)
 		writer.writerow(["end"])
