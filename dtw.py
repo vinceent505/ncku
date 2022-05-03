@@ -37,32 +37,7 @@ frequency_list = np.array([12.35, 17.32, 18.35, 19.45, 20.6, 21.83, 23.12, 24.5,
                  ,2093.0, 2217.46, 2349.32, 2489.02, 2637.02, 2793.83, 2959.96, 3135.96, 3322.44, 3520.0, 3729.31, 3951.07])
 
 
-        
-def stft_fundamental(data, base_freq):
-    l = False
-    if len(data)<4096:
-        data_padding = np.zeros(4096)
-        data_padding[:len(data)] += data
-        input_data = data_padding
-        l = True
-    else:
-        input_data = data
-    f, t, Zxx = signal.stft(input_data, 44100, nperseg=window_size, noverlap=overlap)
-    for i, ii in enumerate(Zxx):#f
-        for k in range(1):
-            if (k+1)*base_freq/1.04 > 44100/2:
-                break
-            if f[i]==0 or(f[i]>(k+1)*base_freq+7.0 or f[i]<(k+1)*base_freq-7.0):
-                for j, jj in enumerate(ii):#t
-                    Zxx[i][j]=0
-                break
-            if f[i]<k*base_freq+7.0:
-                break
-
-    _, s = signal.istft(Zxx, 44100, nperseg=window_size, noverlap=overlap)
-    
-    return s[:len(data)]
-
+       
 
 def check_start_time(start, data, f0, num, order, prev_start):
     onset_env = librosa.onset.onset_strength(y=np.array(data), sr=44100)
@@ -221,7 +196,7 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
 
     name = ["start"]
-    start_time_csv = "dtw_output_csvs/" + musician_name + "_" + music_name + "_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    start_time_csv = "dtw_output_csvs/" + musician_name + "/" + musician_name + "_" + music_name + "_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
     with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)

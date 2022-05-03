@@ -53,7 +53,10 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 	# for i, start_time in enumerate(start_list):
 	_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
 	heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.	
-	for i, start_time in enumerate(tqdm(start_list)):
+	for i, start_time in enumerate(start_list):
+		print("______________")
+		print(i)
+		print(start_time)
 		if order[i]==order[-1]:
 			end_time = len(data)/fs
 			end_list.append(end_time)
@@ -71,7 +74,7 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 			if order[i] == order[i+c]:
 				continue
 			else:
-				cut_start_time = start_list[i+c]+0.05
+				cut_start_time = start_list[i+c]
 				next_find = True
 				idx=c
 				break
@@ -102,15 +105,13 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 					break
 				else:
 					cut_end_time = len(data)/fs
-					
 		if(cut_start_time == cut_end_time):
 			end_list.append(cut_start_time)
 			continue
 		elif(cut_start_time > cut_end_time):
 			cut_end_time += 0.05
-		print("______________")
-		print(i)
-		print(start_time)
+
+
 		start_index = int(cut_start_time*fs/hop_size)
 		end_index = int(cut_end_time*fs/hop_size)
 
@@ -130,14 +131,15 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 			fundamental_contour = np.array(heatmap[freq_index*harmonic][start_index:end_index])
 			# if start_time>9:
 			# 	plt.plot(fundamental_contour)
-			# 	plt.show()
 			if np.min(fundamental_contour) > -40:
 				max_end = end_time
 				append = True
 				break
 			for j in range(1, len(fundamental_contour)):
+				end_time = j*hop_size/fs+cut_start_time
+				if end_time > max_end:
+					max_end = end_time
 				if fundamental_contour[j] <= -52:
-					end_time = j*hop_size/fs+cut_start_time
 					local_min = fundamental_contour[j]
 					for k in range(j+1, len(fundamental_contour)):
 						if fundamental_contour[k] < -55:
@@ -153,15 +155,19 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 							continue
 						else:
 							break
-					if end_time > max_end:
-						max_end = end_time
 					# end_list.append(end_time)
-
+					# print(j)
+					# print(max_end)
 					append = True
 					break
 				else:
-					max_end = j*hop_size/fs+cut_start_time
 					append = True
+		
+		if end_time > max_end:
+			max_end = end_time
+		else:
+			end_time = max_end
+		# plt.show()
 
 		if append:
 			end_list.append(max_end)

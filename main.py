@@ -58,10 +58,10 @@ def get_feature(data, fs, startfile, endfile, notefile):
 
 
 def main(do_dtw = True, do_end = True):
-    # musician_filename = "Bach/audio/bach_Hil.wav" # musician original audio
-    music_name = "presto"
-    musician_name = "henryk" 
-    # musician_name = "hilary" 
+    music_name = "S1_4"
+    # musician_name = "Milstein" 
+    musician_name = "Henryk" 
+    # musician_name = "Hilary" 
 
     perf_filepath = "input/audio/perf/" + musician_name + "/"
     score_filepath = "input/audio/score/" + musician_name + "/"
@@ -78,7 +78,7 @@ def main(do_dtw = True, do_end = True):
     
 
 
-    start_csv = "dtw_output_csvs/manual/" + musician_name + "_" + music_name + "_manual.csv" 
+    start_csv = "dtw_output_csvs/manual/" + musician_name + "/" + musician_name + "_" + music_name + "_manual.csv" 
     ########################
     if do_dtw:
         start_csv = dtw.dtw(musician_filename, score_filename, score, music_name, musician_name)
@@ -153,7 +153,7 @@ def main(do_dtw = True, do_end = True):
     for i in start_time:
         final_time.append([i])
     col_name = ["start"]
-    start_time_csv = "dtw_output_csvs/manual/" + musician_name + "_" + music_name + "final_start" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    start_time_csv = "dtw_output_csvs/manual/" + musician_name + "_" + music_name + "_manual" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
     with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(col_name)
@@ -161,7 +161,7 @@ def main(do_dtw = True, do_end = True):
 
 
     # print(note_name)
-    end_csv = "dtw_output_csvs/" + musician_name + "_" + music_name + "end.csv"
+    end_csv = "dtw_output_csvs/" + musician_name + "/"+ musician_name + "_" + music_name + "end.csv"
     if do_end:
         end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time, musician_name, music_name)
 
