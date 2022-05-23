@@ -14,6 +14,7 @@ from scipy.signal import savgol_filter
 from sklearn.mixture import GaussianMixture
 import math
 import filter
+import paper_fig
 
 
 check = -1
@@ -33,18 +34,29 @@ class note:
         self.end = end
 
         self.g = 1.04
-        self.filtered = self.stft_filt()   
+        self.filtered = self.stft_filt()
+
+        paper_fig.spec(self.data, self.fs)
+        paper_fig.spec(self.filtered, self.fs)
         self.fundamental = self.stft_fundamental()  
-        self.pitch = self.pitch_dec()  
-        # plt.plot(self.pitch)
+        self.pitch = self.pitch_dec() 
+        print("LLL", len(self.pitch))
+        print(len(self.data)/44100)
+        paper_fig.spec_pitch(self.filtered, self.fs, self.pitch) 
+
+        # plt.plot(np.arange(len(self.pitch))/10, self.pitch)
+        # plt.xlabel("Time[second]")
+        # plt.ylabel("Hz")
         # plt.show()  
         # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
-        #scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
+        # scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
 
 
         self.envname = ""
         self.envelope = self.get_envelope(self.filtered)
         # plt.plot(self.envelope)
+        # plt.xlabel("Samples")
+        # plt.ylabel("Amplitude")
         # plt.show()
         self.adsr = []#self.find_adsr()
 
@@ -180,6 +192,9 @@ class note:
             post_inter_x.append(i/self.fs)
         if wr:
             self.envname = envelope.env_write(self.num, post_inter_y, self.fs)
+        # plt.plot(post_inter_y)
+        # plt.title("Energy envelope")
+        # plt.show()
         return post_inter_y
 
     def find_adsr(self):
@@ -251,22 +266,22 @@ class note:
 
                 harmonics.append(20*(math.log(max(candidate), 10)))
 
-            if self.num == check:
-                # for i in check_harmonics:
-                #     plt.plot(i)
-                # print("___________")
-                # plt.legend(range(-3, 3))
-                # plt.show()
-                # plt.figure()
-                if k <= 10:
-                    plt.plot(harmonics)
+
 
             f_harmonics.append(harmonics)
 
-        if self.num == check:
-            plt.legend(range(10))
-            plt.show()
-            
+        # print(self.num)
+        # print(self.start)
+        # print(self.end)
+        # for j, i in enumerate(f_harmonics):
+        #     print(j)
+        #     if j==5:
+        #         plt.xlabel("Time[second]")
+        #         plt.ylabel("dB")
+        #         plt.legend()
+        #         plt.show()
+        #         break
+        #     plt.plot(np.linspace(0, len(self.data)/44100, len(i)), i, label="$h$="+str(j))
         return f_harmonics
 
 

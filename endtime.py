@@ -8,6 +8,7 @@ import time
 import scipy.signal as signal
 from tqdm import tqdm
 from scipy.signal import savgol_filter
+import paper_fig
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
 			,'C1', 'D-1', 'D1', 'E-1', 'E1', 'F1', 'G-1', 'G1', 'A-1', 'A1', 'B-1', 'B1'
@@ -53,6 +54,8 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 	# for i, start_time in enumerate(start_list):
 	_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
 	heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.	
+	
+	#fig, ax = plt.subplots(nrows=2)
 	for i, start_time in enumerate(start_list):
 		print("______________")
 		print(i)
@@ -122,7 +125,16 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 
 		fundamental = np.array(heatmap[freq_index][start_index:end_index])
 
-
+		
+###########################
+		# if i==5:
+		# 	ax[0].plot(np.arange(len(fundamental))*64/44100, fundamental)
+		# 	ax[0].set(xlabel="Time[second]", ylabel="dB")
+		# if i==15:
+		# 	ax[1].plot(np.arange(len(fundamental))*64/44100, fundamental)
+		# 	ax[1].set(xlabel="Time[second]", ylabel="dB")
+		# 	plt.show()
+###########################
 
 		# Find local minimum of energy curve.
 		append = False
@@ -167,7 +179,6 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 			max_end = end_time
 		else:
 			end_time = max_end
-		# plt.show()
 
 		if append:
 			end_list.append(max_end)

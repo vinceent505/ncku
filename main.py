@@ -58,10 +58,10 @@ def get_feature(data, fs, startfile, endfile, notefile):
 
 
 def main(do_dtw = True, do_end = True):
-    music_name = "S1_4"
+    music_name = "presto_cut"
     # musician_name = "Milstein" 
-    musician_name = "Henryk" 
-    # musician_name = "Hilary" 
+    # musician_name = "Henryk" 
+    musician_name = "Hilary" 
 
     perf_filepath = "input/audio/perf/" + musician_name + "/"
     score_filepath = "input/audio/score/" + musician_name + "/"
@@ -92,12 +92,11 @@ def main(do_dtw = True, do_end = True):
     note_name = []
 
     x_1, fs = librosa.load(musician_filename, sr=44100)
-
     start_file = pd.read_csv(start_csv)
 
 
 
-    
+
     order_time = []
     for i in score:
         order_time.append(score[i]["start"])

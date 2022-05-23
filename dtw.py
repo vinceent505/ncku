@@ -138,18 +138,38 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
     #     final_csv.append([i])
 
     if show:
+        D, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
+        wp_s = np.asarray(wp) * hop_size / fs
+
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111)
+        librosa.display.specshow(D, x_axis='time', y_axis='time',
+                                cmap='gray_r', hop_length=hop_size)
+        imax = ax.imshow(D, cmap=plt.get_cmap('gray_r'),
+                        origin='lower', interpolation='nearest', aspect='auto')
+        ax.plot(wp_s[:, 1], wp_s[:, 0], marker='o', color='r')
+        ax.set(xlabel="MIDI Synthesized Audio Time[second]", ylabel="Violinist\'s Recording Time[second]")
+        plt.title('Warping Path on Acc. Cost Matrix $D$')
+        plt.colorbar()
+        plt.show()
+
+
         fig = plt.figure(figsize=(16, 8))
 
         # Plot x_1
         plt.subplot(2, 1, 1)
-        librosa.display.waveplot(x_1, sr=fs)
-        plt.title('Synthesis Version $X_1$')
+        librosa.display.waveplot(x_1, sr=fs, x_axis="s")
+        plt.title('Midi Synthesized')
+        plt.ylabel("Amplitude")
+        plt.xlabel("Time[second]")
         ax1 = plt.gca()
 
         # Plot x_2
         plt.subplot(2, 1, 2)
         librosa.display.waveplot(x_2, sr=fs)
-        plt.title('Hil Version $X_2$')
+        plt.title('Musician Performance')
+        plt.ylabel("Amplitude")
+        plt.xlabel("Time[second]")
         ax2 = plt.gca()
 
         plt.tight_layout()
@@ -159,18 +179,11 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
         count = 0
         first = False
-        for i in wp * hop_size / fs:
-            tp1 = 0
-            tp2 = 0
-            for j in start_idx_np:
-                if round(i[0], 2) == round(j* hop_size / fs / 3, 2) and i[1] > 0:
-                    if(first):
-                        break
-                    if(i[0] == 0):
-                        first = True
+        for j in start_time:
+            for i in wp_s:
+                if round(i[0], 2) == round(j, 2) and i[1]>0:
                     tp1 = i[0]
                     tp2 = i[1]
-                    count += 1
                     break
 
             # get position on axis for a given index-pair
