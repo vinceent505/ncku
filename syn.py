@@ -104,8 +104,6 @@ def synthesis(note, time_series):
         
         harmonic = signal.resample(harmonic, samples)
         for t , pitch in enumerate(pitch_contour):
-            if (harmonic_num+1)*pitch>2000:
-                pitch = note["frequency"]
             delta = (pitch * (harmonic_num+1)) / SAMPLE_RATE * (2 * math.pi)
             phase += delta
             h = -pow(10, harmonic[t] / 20)

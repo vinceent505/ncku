@@ -56,7 +56,7 @@ def onset_fig(y, sr):
     D = np.abs(librosa.stft(y))
     o_env = librosa.onset.onset_strength(y=y, sr=sr)
     times = librosa.times_like(o_env, sr=sr)
-    onset_frames = librosa.onset.onset_detect(onset_envelope=o_env, sr=sr)
+    onset_frames = librosa.onset.onset_detect(onset_envelope=o_env, sr=sr, hop_length=64)
     times = librosa.times_like(D, sr=sr)
     fig, ax = plt.subplots(nrows=2, sharex=True)
     librosa.display.specshow(librosa.amplitude_to_db(D, ref=np.max),
@@ -75,18 +75,16 @@ def onset_fig(y, sr):
     plt.show()
 
 
-def offset_fig(curve, i):
-    if i==5:
-        fig, ax = plt.subplots(nrows=2, sharex=True)
-        ax[0].plot(np.arange(len(curve))*64/44100, curve)
-        ax[0].set(xlabel="Time[second]", ylabel="dB")
-    if i==15:
-        ax[1].plot(np.arange(len(curve))*64/44100, curve)
-        ax[1].set(xlabel="Time[second]", ylabel="dB")
-        plt.show()
+def offset_fig(y, curve):
+    fig, ax = plt.subplots(nrows=2, sharex=True)
+    ax[0].plot(np.arange(len(y))/44100, y)
+    ax[0].set(xlabel="Time[second]", ylabel="Amplitude")
 
 
-    pass
+    ax[1].plot(np.arange(len(curve))*64/44100, curve)
+    ax[1].set(xlabel="Time[second]", ylabel="dB")
+    plt.show()
+
 
 if __name__ == "__main__":
     # y, sr = librosa.load("input/audio/perf/Hilary/k.wav", sr=44100)

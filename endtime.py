@@ -55,7 +55,7 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 	_, _, Zxx = signal.stft(data, fs, boundary=None, nperseg=window_size, noverlap=overlap)
 	heatmap = librosa.amplitude_to_db(np.abs(Zxx)) #frequency bins = Frames frequency gap fs/n_fft.	
 	
-	#fig, ax = plt.subplots(nrows=2)
+	# fig, ax = plt.subplots(nrows=2)
 	for i, start_time in enumerate(start_list):
 		print("______________")
 		print(i)
@@ -125,16 +125,9 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 
 		fundamental = np.array(heatmap[freq_index][start_index:end_index])
 
-		
-###########################
-		# if i==5:
-		# 	ax[0].plot(np.arange(len(fundamental))*64/44100, fundamental)
-		# 	ax[0].set(xlabel="Time[second]", ylabel="dB")
-		# if i==15:
-		# 	ax[1].plot(np.arange(len(fundamental))*64/44100, fundamental)
-		# 	ax[1].set(xlabel="Time[second]", ylabel="dB")
-		# 	plt.show()
-###########################
+
+		# ene = np.array(heatmap[freq_index][int(start_time*fs/hop_size):end_index])
+		# paper_fig.offset_fig(data[int(start_time*44100):int(cut_end_time*44100)], ene)
 
 		# Find local minimum of energy curve.
 		append = False

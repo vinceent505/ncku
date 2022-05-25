@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
@@ -16,6 +17,8 @@ import pickle
 import multiprocessing as mp
 import sys
 import syn
+import paper_fig
+
 
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
@@ -65,6 +68,7 @@ def main(do_dtw = True, do_end = True):
 
     perf_filepath = "input/audio/perf/" + musician_name + "/"
     score_filepath = "input/audio/score/" + musician_name + "/"
+    dtw_csvdir = "dtw_output_csvs/" + musician_name + "/"
 
 
     musician_filename = perf_filepath + musician_name + "_" + music_name + "_perf.wav" # musician original audio
@@ -81,7 +85,7 @@ def main(do_dtw = True, do_end = True):
     start_csv = "dtw_output_csvs/manual/" + musician_name + "/" + musician_name + "_" + music_name + "_manual.csv" 
     ########################
     if do_dtw:
-        start_csv = dtw.dtw(musician_filename, score_filename, score, music_name, musician_name)
+        start_csv =  "dtw_output_csvs/" + musician_name + "/" + musician_name + "_" + music_name + ".csv"
     ########################
     # for i in score:
     #     print(score[i]["start"])
@@ -132,6 +136,8 @@ def main(do_dtw = True, do_end = True):
                 break
             nxt_start = len(x_1)/fs
         if n>0:
+            print(i-0.02)
+            paper_fig.onset_fig(np.array(x_1[int((i-0.02)*44100):int((i+0.11)*44100)]), 44100)
             if i>0.05:
                 i -= 0.05
             s = dtw.check_start_time(i, x_1[int((i)*fs):int((nxt_start)*fs)], f0, n, order, prev_start)

@@ -209,7 +209,7 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
 
     name = ["start"]
-    start_time_csv = "dtw_output_csvs/" + musician_name + "/" + musician_name + "_" + music_name + "_" +  time.strftime("%Y%m%d-%H%M%S") + ".csv"
+    start_time_csv = "dtw_output_csvs/" + musician_name + "/" + musician_name + "_" + music_name + ".csv"
     with open(start_time_csv, "w") as f:
         writer = csv.writer(f)
         writer.writerow(name)
@@ -218,7 +218,21 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
 
 if __name__ == "__main__":
-    dtw() 
+    music_name = "presto_cut"
+    # musician_name = "Milstein" 
+    # musician_name = "Henryk" 
+    musician_name = "Hilary" 
+
+    perf_filepath = "input/audio/perf/" + musician_name + "/"
+    score_filepath = "input/audio/score/" + musician_name + "/"
+    dtw_csvdir = "dtw_output_csvs/" + musician_name + "/"
+    musician_filename = perf_filepath + musician_name + "_" + music_name + "_perf.wav" # musician original audio
+    score_filename = score_filepath + musician_name + "_" + music_name + "_score.wav" # score synthesis audio
+    score_data = "input/data/"+music_name+".pickle" # score midi data    
+    with open(score_data, "rb") as f:
+        score = pickle.load(f)
+
+    dtw(musician_filename, score_filename, score, music_name, musician_name) 
 
 
 
