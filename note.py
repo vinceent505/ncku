@@ -36,13 +36,13 @@ class note:
         self.g = 1.04
         self.filtered = self.stft_filt()
 
-        paper_fig.spec(self.data, self.fs)
-        paper_fig.spec(self.filtered, self.fs)
+        # paper_fig.spec(self.data, self.fs)
+        # paper_fig.spec(self.filtered, self.fs)
         self.fundamental = self.stft_fundamental()  
         self.pitch = self.pitch_dec() 
-        print("LLL", len(self.pitch))
-        print(len(self.data)/44100)
-        paper_fig.spec_pitch(self.filtered, self.fs, self.pitch) 
+        # print("LLL", len(self.pitch))
+        # print(len(self.data)/44100)
+        # paper_fig.spec_pitch(self.filtered, self.fs, self.pitch) 
 
         # plt.plot(np.arange(len(self.pitch))/10, self.pitch)
         # plt.xlabel("Time[second]")

@@ -61,7 +61,7 @@ def get_feature(data, fs, startfile, endfile, notefile):
 
 
 def main(do_dtw = True, do_end = True):
-    music_name = "presto_cut"
+    music_name = "P1_6"
     # musician_name = "Milstein" 
     # musician_name = "Henryk" 
     musician_name = "Hilary" 
@@ -137,7 +137,7 @@ def main(do_dtw = True, do_end = True):
             nxt_start = len(x_1)/fs
         if n>0:
             print(i-0.02)
-            paper_fig.onset_fig(np.array(x_1[int((i-0.02)*44100):int((i+0.11)*44100)]), 44100)
+            # paper_fig.onset_fig(np.array(x_1[int((i-0.02)*44100):int((i+0.11)*44100)]), 44100)
             if i>0.05:
                 i -= 0.05
             s = dtw.check_start_time(i, x_1[int((i)*fs):int((nxt_start)*fs)], f0, n, order, prev_start)
@@ -190,7 +190,7 @@ def main(do_dtw = True, do_end = True):
         output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
 
 
-    with open("output/pickle/" + musician_name + "_" + music_name + ".pickle", "wb") as f:
+    with open("output/pickle/" + musician_name + "/" + musician_name + "_" + music_name + ".pickle", "wb") as f:
         d = dict(enumerate(output_list))
         pickle.dump(d, f)
 
