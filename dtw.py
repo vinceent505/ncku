@@ -9,7 +9,7 @@ import pandas as pd
 import csv
 from scipy import signal
 import scipy.io.wavfile
-
+import pickle
 import resampy
 import crepe
 from scipy.signal import savgol_filter
@@ -218,7 +218,7 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
 
 if __name__ == "__main__":
-    music_name = "presto_cut"
+    music_name = "P1_6"
     # musician_name = "Milstein" 
     # musician_name = "Henryk" 
     musician_name = "Hilary" 
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     dtw_csvdir = "dtw_output_csvs/" + musician_name + "/"
     musician_filename = perf_filepath + musician_name + "_" + music_name + "_perf.wav" # musician original audio
     score_filename = score_filepath + musician_name + "_" + music_name + "_score.wav" # score synthesis audio
-    score_data = "input/data/"+music_name+".pickle" # score midi data    
+    score_data = "input/data/"+musician_name+"/"+music_name+".pickle" # score midi data    
     with open(score_data, "rb") as f:
         score = pickle.load(f)
 
