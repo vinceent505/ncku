@@ -18,7 +18,7 @@ music_name = "S1_4"
 
 
 def main():
-    f = open("output/pickle/"+musician_name+"/"+musician_name+"_"+music_name+"_2nd.pickle", "rb")
+    f = open("output/pickle/"+musician_name+"/"+musician_name+"_"+music_name+".pickle", "rb")
     d = pickle.load(f)
     note_list = []
     for i in d:
