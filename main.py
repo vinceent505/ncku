@@ -61,7 +61,7 @@ def get_feature(data, fs, startfile, endfile, notefile):
 
 
 def main(do_dtw = True, do_end = True):
-    music_name = "P1_6"
+    music_name = "P2_4_2nd"
     # musician_name = "Milstein" 
     # musician_name = "Henryk" 
     musician_name = "Hilary" 
@@ -73,7 +73,7 @@ def main(do_dtw = True, do_end = True):
 
     musician_filename = perf_filepath + musician_name + "_" + music_name + "_perf.wav" # musician original audio
     score_filename = score_filepath + musician_name + "_" + music_name + "_score.wav" # score synthesis audio
-    score_data = "input/data/"+music_name+".pickle" # score midi data
+    score_data = "input/data/"+musician_name+"/"+musician_name+"_"+music_name+".pickle" # score midi data
 
 
     

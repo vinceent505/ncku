@@ -14,7 +14,7 @@ class midi_note:
         self.end = end
 
 musician_name = "Hilary"
-music_name = "S1_4"
+music_name = "P2_4"
 
 
 def main():
