@@ -13,8 +13,8 @@ class midi_note:
         self.start = start
         self.end = end
 
-musician_name = "Hilary"
-music_name = "P2_4"
+musician_name = "Henryk"
+music_name = "S1_4"
 
 
 def main():

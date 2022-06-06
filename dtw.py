@@ -218,10 +218,8 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
 
 if __name__ == "__main__":
-    music_name = "P2_4_2nd"
-    # musician_name = "Milstein" 
-    # musician_name = "Henryk" 
-    musician_name = "Hilary" 
+    music_name = "S1_4_2nd"
+    musician_name = "Henryk" 
 
     perf_filepath = "input/audio/perf/" + musician_name + "/"
     score_filepath = "input/audio/score/" + musician_name + "/"
