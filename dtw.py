@@ -13,6 +13,9 @@ import pickle
 import resampy
 import crepe
 from scipy.signal import savgol_filter
+import aubio
+
+
 
 show = False
 HOP_SIZE = 512
@@ -46,22 +49,33 @@ def check_start_time(start, data, f0, num, order, prev_start):
         return 0
     onset = librosa.onset.onset_detect(onset_envelope=onset_env, sr=44100)
     times = librosa.times_like(onset_env, sr=44100)
-    # if num > 710 and num < 720:
-    #     print(start+times[onset])
-    #     plt.plot(start+times, onset_env)
-    #     plt.show()
+
+    dest_freq = 500
+    ratio = f0/dest_freq
+    d_upsample = resampy.resample(np.array(data), 44100, 44100*ratio)
+    d = resampy.resample(d_upsample, 44100, 16000)
+    # scipy.io.wavfile.write("out/shift"+str(self.num)+".wav", 16000, d)
+    _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0, step_size = 10*ratio)
+    p = p*ratio
+
+    pp = []
+    for k in range(len(p)-1):
+        if k==len(p)-5:
+            break
+        pp.append(abs(p[k+1]-p[k]))
+
+    m = np.argmax(np.array(pp))
 
 
-    if len(onset) == 0:
-        return start+0.05
-    if len(onset)>1:
-        for i in onset:
-            if (start+times[i])<prev_start+0.05:
-                continue
-            else:
-                return start+times[i]
-        
-    return start+times[onset[0]]
+    pitch_idx = []
+    for n, i in enumerate(times[onset]):
+        if len(onset)>2 and n==len(onset)-1:
+            break
+        pitch_idx.append(round(i/0.01))
+    pitch_idx = np.absolute(np.array(pitch_idx)-m)
+
+    return start+times[onset[np.argmin(pitch_idx)]]
+
     
 
 
