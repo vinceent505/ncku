@@ -6,9 +6,9 @@ import pandas as pd
 
 
 if __name__ == "__main__":
-    musician_name = "Hilary"
-    music_name = "P1_6"
-    file = musician_name + "_" + music_name + ".pickle"
+    musician_name = "Henryk"
+    music_name = "S1_4_2nd"
+    file = musician_name + "/" + musician_name + "_" + music_name + ".pickle"
 
     with open (file,'rb') as f:
         new_dict = pickle.load(f)
