@@ -27,7 +27,6 @@ class note:
         self.name = name
         self.fs = fs
         self.data = np.array(data)          
-        # scipy.io.wavfile.write("test/original"+str(self.num)+".wav", self.fs, self.data)
 
         self.base_freq = base_freq
         self.start = start
@@ -36,41 +35,18 @@ class note:
         self.g = 1.04
         self.filtered = self.stft_filt()
 
-        # paper_fig.spec(self.data, self.fs)
-        # paper_fig.spec(self.filtered, self.fs)
-        self.fundamental = self.stft_fundamental()  
-        self.pitch = self.pitch_dec() 
-        # print("LLL", len(self.pitch))
-        # print(len(self.data)/44100)
-        # paper_fig.spec_pitch(self.filtered, self.fs, self.pitch) 
-
-        # plt.plot(np.arange(len(self.pitch))/10, self.pitch)
-        # plt.xlabel("Time[second]")
-        # plt.ylabel("Hz")
-        # plt.show()  
-        # scipy.io.wavfile.write("out/filtered"+str(self.num)+".wav", self.fs, self.filtered)
-        # scipy.io.wavfile.write("out/fund"+str(self.num)+".wav", self.fs, self.fundamental)
-
-
+        self.fundamental = self.stft_fundamental() 
         self.envname = ""
-        self.envelope = self.get_envelope(self.filtered)
-        # plt.plot(self.envelope)
-        # plt.xlabel("Samples")
-        # plt.ylabel("Amplitude")
-        # plt.show()
-        self.adsr = []#self.find_adsr()
-
-        self.noise = self.noise_poly()
-        self.harmonics = self.harmonics_poly()     
-        # for i in self.harmonics:
-        #     plt.plot(i)
-        # plt.show()
-        
-        # print(len(self.harmonics))
-        # for i in range(len(self.harmonics)):
-        #     plt.plot(np.linspace(0, self.end-self.start, len(self.harmonics[i])), self.harmonics[i])
-        # plt.legend(range(1, len(self.harmonics)+1))
-        # plt.show()
+        if len(data)>0:
+            self.pitch = self.pitch_dec() 
+            self.envelope = self.get_envelope(self.filtered)
+            self.noise = self.noise_poly()
+            self.harmonics = self.harmonics_poly()     
+        else:
+            self.pitch = []
+            self.envelope = []
+            self.noise = []
+            self.harmonics = []
 
     def stft_filt(self):
         if len(self.data)<4096:
@@ -134,14 +110,11 @@ class note:
         faded[0: length] = faded[0: length] * fadein_window
         faded[-length:] = faded[-length:] * fadeout_window
 
-        # scipy.io.wavfile.write("out/faded"+str(self.num)+".wav", self.fs, faded)
-
         if self.base_freq > 1500:
             dest_freq = 500
             ratio = self.base_freq/dest_freq
             d_upsample = resampy.resample(faded, self.fs, self.fs*ratio)
             d = resampy.resample(d_upsample, self.fs, 16000)
-            # scipy.io.wavfile.write("out/shift"+str(self.num)+".wav", 16000, d)
             _, p, _, _ = crepe.predict(d, 16000, viterbi=True, verbose=0, step_size = 10*ratio)
             p = p*ratio
             if len(p)//2*2-1 > 3:
@@ -270,18 +243,6 @@ class note:
 
             f_harmonics.append(harmonics)
 
-        # print(self.num)
-        # print(self.start)
-        # print(self.end)
-        # for j, i in enumerate(f_harmonics):
-        #     print(j)
-        #     if j==5:
-        #         plt.xlabel("Time[second]")
-        #         plt.ylabel("dB")
-        #         plt.legend()
-        #         plt.show()
-        #         break
-        #     plt.plot(np.linspace(0, len(self.data)/44100, len(i)), i, label="$h$="+str(j))
         return f_harmonics
 
 

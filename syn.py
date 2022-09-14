@@ -84,7 +84,10 @@ def synthesis(note, time_series):
     harmonics_f = note["harmonics"]
     harmonics_t = np.transpose(harmonics_f).tolist()
     pitch_contour = note["pitch"]
-
+    
+    if len(harmonics_f)==0 or len(harmonics_f[0])==0:
+      return
+    
     normalized_max_value = np.max(harmonics_f)
     normalized_min_value = np.min(harmonics_f)
     normalized_range = normalized_max_value - normalized_min_value
@@ -133,8 +136,13 @@ def synthesis(note, time_series):
     # plt.plot(divide)
     # plt.plot(savgol_filter(divide, 1501, 2))
     # plt.show()
-
-    divide = savgol_filter(divide, 1501, 2)
+    if len(divide)>=1501:
+        divide = savgol_filter(divide, 1501, 2)
+    else:
+        if len(divide)%2==1:
+            divide = savgol_filter(divide, len(divide), 2)
+        else:
+            divide = savgol_filter(divide, len(divide)-1, 2)
     for i, j in enumerate(divide):
         window_sum[i] *= j
 

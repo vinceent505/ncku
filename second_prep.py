@@ -13,7 +13,7 @@ class midi_note:
         self.start = start
         self.end = end
 
-musician_name = "Henryk"
+musician_name = "Milstein"
 music_name = "S1_4"
 
 

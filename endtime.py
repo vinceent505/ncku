@@ -108,12 +108,13 @@ def find_endtime(musician_filename, score, order, start_list, musician_name, mus
 					break
 				else:
 					cut_end_time = len(data)/fs
-		if(cut_start_time == cut_end_time):
-			end_list.append(cut_start_time)
+		if(cut_end_time-cut_start_time<0.01):
+			end_list.append(cut_end_time)
 			continue
 		elif(cut_start_time > cut_end_time):
 			cut_end_time += 0.05
-
+		print(cut_start_time)
+		print(cut_end_time)
 
 		start_index = int(cut_start_time*fs/hop_size)
 		end_index = int(cut_end_time*fs/hop_size)

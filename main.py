@@ -19,6 +19,8 @@ import sys
 import syn
 import paper_fig
 
+music_name = "P3_4_1"
+musician_name = "Hilary" 
 
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
@@ -52,17 +54,9 @@ def get_feature(data, fs, startfile, endfile, notefile):
         else:
             f0 = frequency_list[pitch_list.index(n)]
         frag = data[int(s*fs):int(e*fs)]
-        # print(s)
-        # print(e)
         note_list.append(note.note(num, n, frag, fs, f0, s, e))
-    
 
-
-
-
-def main(do_dtw = True, do_end = True):
-    music_name = "S1_4_2nd"
-    musician_name = "Henryk" 
+def main():
 
     perf_filepath = "input/audio/perf/" + musician_name + "/"
     score_filepath = "input/audio/score/" + musician_name + "/"
@@ -72,21 +66,11 @@ def main(do_dtw = True, do_end = True):
     musician_filename = perf_filepath + musician_name + "_" + music_name + "_perf.wav" # musician original audio
     score_filename = score_filepath + musician_name + "_" + music_name + "_score.wav" # score synthesis audio
     score_data = "input/data/"+musician_name+"/"+musician_name+"_"+music_name+".pickle" # score midi data
-
-
     
     with open(score_data, "rb") as f:
         score = pickle.load(f)
-    
 
-
-    start_csv = "dtw_output_csvs/manual/" + musician_name + "/" + musician_name + "_" + music_name + "_manual.csv" 
-    ########################
-    if do_dtw:
-        start_csv =  "dtw_output_csvs/" + musician_name + "/" + musician_name + "_" + music_name + ".csv"
-    ########################
-    # for i in score:
-    #     print(score[i]["start"])
+    start_csv =  "dtw_output_csvs/" + musician_name + "/" + musician_name + "_" + music_name + ".csv"
     start_time = []
     end_time = []
     pitch_contour = []
@@ -104,20 +88,13 @@ def main(do_dtw = True, do_end = True):
         order_time.append(score[i]["start"])
     order = dtw.start_time_order(order_time)[:len(start_file["start"])]
 
-
-    print("Normalize Start!!")
     x_1 = envelope.normalize(x_1, -1, 1)
-    print("Normalize Done!!")
-
-
-    
-
-
-
-
 
     prev_start = 0.0
     for n, i in enumerate(start_file["start"]):
+        i = float(i[1:-1])
+        if i*fs>len(x_1):
+            break
         no = score[n]["name"]
         note_name.append(no)
 
@@ -130,26 +107,20 @@ def main(do_dtw = True, do_end = True):
 
         for o_n, o in enumerate(order):
             if order[n] == o-1:
-                nxt_start = start_file["start"][o_n]
+                nxt_start = float(start_file["start"][o_n][1:-1])
                 break
             nxt_start = len(x_1)/fs
         if n>0:
-            print(i-0.02)
-            # paper_fig.onset_fig(np.array(x_1[int((i-0.02)*44100):int((i+0.11)*44100)]), 44100)
             if i>0.05:
-                i -= 0.05
-            s = dtw.check_start_time(i, x_1[int((i)*fs):int((nxt_start)*fs)], f0, n, order, prev_start)
+                i-=0.05
+            s = dtw.check_start_time(i, x_1[int(i*fs):int((nxt_start)*fs)], f0, n, order, prev_start)
         else:
             s = 0.0
         start_time.append(s)
         if order[n] == order[-1]:
-            print(s)
-            print(n)
             continue
         elif order[n+1] != order[n]:
             prev_start = s
-        print(s)
-        print(n)
 
 
     final_time = []
@@ -173,19 +144,9 @@ def main(do_dtw = True, do_end = True):
 
     get_feature(x_1, fs, start_time, end_file["end"], note_name)
 
-
-
-
-
-
-    #output    
-    # for i in note_list:
-    #     plt.plot(np.linspace(i.start, i.end, len(i.pitch)), i.pitch)
-    # plt.show()  
-
     output_list = []
     for i in note_list:
-        output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "adsr": i.adsr, "harmonics": i.harmonics, "noise":i.noise})
+        output_list.append({"num": i.num,"name": i.name,"frequency": i.base_freq, "start": i.start,"end": i.end,"pitch": i.pitch,"envelope": i.envelope, "harmonics": i.harmonics, "noise":i.noise})
 
 
     with open("output/pickle/" + musician_name + "/" + musician_name + "_" + music_name + ".pickle", "wb") as f:
@@ -196,19 +157,4 @@ def main(do_dtw = True, do_end = True):
     
                  
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        if sys.argv[1] == "1":
-            start = True
-        else:
-            start = False
-        
-        if sys.argv[2] == "1":
-            end = True
-        else:
-            end = False
-        print("NO DTW")
-        main(start, end)
-    else:
-        print("DTW")
-        main()
-
+    main()
