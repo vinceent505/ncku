@@ -19,7 +19,7 @@ import sys
 import syn
 import paper_fig
 
-music_name = "P3_4_1"
+music_name = "S3_2_2"
 musician_name = "Hilary" 
 
 
@@ -136,8 +136,7 @@ def main():
 
     # print(note_name)
     end_csv = "dtw_output_csvs/" + musician_name + "/"+ musician_name + "_" + music_name + "end.csv"
-    if do_end:
-        end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time, musician_name, music_name)
+    end_csv = endtime.find_endtime(musician_filename, note_name, order, start_time, musician_name, music_name)
 
     end_file = pd.read_csv(end_csv)
 
