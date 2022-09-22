@@ -13,8 +13,10 @@ import pickle
 import resampy
 from scipy.signal import savgol_filter
 import aubio
+from tqdm import tqdm
 
-
+music_name = "P3_1"
+musician_name = "Milstein" 
 
 show = False
 HOP_SIZE = 512
@@ -123,7 +125,7 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
                                             hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
     x_2_chroma = librosa.feature.chroma_cqt(y=x_2, sr=fs, tuning=0, norm=2,
                                             hop_length=hop_size, n_chroma = 36, bins_per_octave = 72)
-
+    print("DTW Start")
     _, wp = librosa.sequence.dtw(X=x_1_chroma, Y=x_2_chroma, metric='cosine')
     wp_s = np.array(wp)[::-1] * hop_size / fs
 
@@ -131,7 +133,7 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
     first = False
     final_time = []
-    for j in start_time:
+    for j in tqdm(start_time):
         for i in wp_s:
             if round(i[0], 2) == round(j, 2) and i[1]>0:
                 final_time.append([i[1]])
@@ -223,8 +225,6 @@ def dtw(musician_filename, score_filename, score, music_name, musician_name):
 
 
 if __name__ == "__main__":
-    music_name = "P3_3"
-    musician_name = "Hilary" 
 
     perf_filepath = "input/audio/perf/" + musician_name + "/"
     score_filepath = "input/audio/score/" + musician_name + "/"

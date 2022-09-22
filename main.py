@@ -19,8 +19,8 @@ import sys
 import syn
 import paper_fig
 
-music_name = "S3_2_2"
-musician_name = "Hilary" 
+music_name = "P3_1"
+musician_name = "Milstein" 
 
 
 pitch_list = ['C0', 'D-0', 'D0', 'E-0', 'E0', 'F0', 'G-0', 'G0', 'A-0', 'A0', 'B-0', 'B0'
